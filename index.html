@@ -11,6 +11,13 @@
     #app{position:relative;height:100vh;overflow:hidden;background:#fff}
     .screen{display:none;flex-direction:column;height:100vh;background:#fff;overflow:hidden}
     .screen.active{display:flex}
+    /* Fixed footer — always visible on mobile regardless of layout */
+    #att-footer-fixed{display:none;position:fixed;bottom:0;left:0;right:0;padding:12px 16px;background:#fff;border-top:2px solid #eee;z-index:1000;gap:12px;align-items:center}
+    #s-attendance.active ~ #att-footer-fixed{display:flex}
+    .submit-btn{flex:1;padding:16px;border-radius:12px;background:#185FA5;color:#fff;border:none;font-size:16px;font-weight:600;cursor:pointer;-webkit-appearance:none}
+    .submit-btn:active{background:#0C447C}
+    .submit-btn:disabled{background:#b0c4de;cursor:default}
+    .progress-lbl{font-size:12px;color:#888;white-space:nowrap}
 
     /* HOME */
     .s-home{align-items:center;justify-content:center;gap:32px}
@@ -47,8 +54,8 @@
     .detecting-room{font-size:22px;font-weight:500}
     .detecting-sub{font-size:15px;color:#888}
 
-    /* ATTENDANCE */
-    .s-attendance{flex-direction:column;height:100vh}
+    /* ATTENDANCE — uses position:absolute to guarantee footer is always visible */
+    .s-attendance{flex-direction:column;position:relative}
     .att-header{padding:14px 20px 12px;border-bottom:1px solid #f0f0f0;flex-shrink:0}
     .att-class{font-size:18px;font-weight:500}
     .att-meta{font-size:13px;color:#888;margin-top:3px}
@@ -63,7 +70,7 @@
     .tally-val{font-size:20px;font-weight:500}
     .tally-lbl{font-size:11px;color:#888;margin-top:2px}
     .tv-g{color:#1D9E75}.tv-r{color:#E24B4A}.tv-a{color:#BA7517}
-    .student-list{overflow-y:auto;flex:1;-webkit-overflow-scrolling:touch;min-height:0}
+    .student-list{overflow-y:auto;flex:1;min-height:0;-webkit-overflow-scrolling:touch;padding-bottom:80px}
     .student-row{display:flex;align-items:center;padding:10px 16px;border-bottom:1px solid #f0f0f0;gap:12px}
     .avatar{width:36px;height:36px;border-radius:50%;background:#E6F1FB;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:500;color:#185FA5;flex-shrink:0}
     .student-name{font-size:14px;font-weight:500;flex:1}
@@ -73,7 +80,7 @@
     .sbtn-present.on{background:#C0DD97;color:#27500A;border-color:#639922}
     .sbtn-tardy.on{background:#FAC775;color:#633806;border-color:#BA7517}
     .sbtn-absent.on{background:#F7C1C1;color:#791F1F;border-color:#E24B4A}
-    .att-footer{padding:12px 16px;border-top:2px solid #f0f0f0;display:flex;gap:12px;align-items:center;flex-shrink:0;background:#fff}
+    .att-footer{display:none} /* replaced by #att-footer-fixed */
     .submit-btn{flex:1;padding:14px;border-radius:12px;background:#185FA5;color:#fff;border:none;font-size:15px;font-weight:600;cursor:pointer}
     .submit-btn:active{background:#0C447C}
     .submit-btn:disabled{background:#b0c4de;cursor:default}
@@ -83,24 +90,24 @@
 
     /* FALLBACK */
     .s-fallback{flex-direction:column}
-    .fallback-header{padding:22px 24px 18px;border-bottom:1px solid #f0f0f0;display:flex;align-items:center;gap:18px;flex-shrink:0}
+    .fallback-header{padding:16px 20px;border-bottom:1px solid #f0f0f0;display:flex;align-items:center;gap:16px;flex-shrink:0}
     .back-link{background:none;border:none;cursor:pointer;color:#888;font-size:26px;padding:0;line-height:1;flex-shrink:0}
-    .fallback-title{font-size:18px;font-weight:500}
-    .seg-wrap{padding:18px 24px 0;flex-shrink:0}
+    .fallback-title{font-size:17px;font-weight:500}
+    .seg-wrap{padding:14px 20px 0;flex-shrink:0}
     .seg{display:grid;grid-template-columns:1fr 1fr 1fr;border:2px solid #185FA5;border-radius:10px;overflow:hidden}
-    .seg-btn{padding:12px 0;font-size:14px;font-weight:500;text-align:center;cursor:pointer;border:none;transition:background .15s,color .15s}
+    .seg-btn{padding:11px 0;font-size:13px;font-weight:500;text-align:center;cursor:pointer;border:none;transition:background .15s,color .15s}
     .seg-btn:not(:last-child){border-right:2px solid #185FA5}
     .seg-btn.inactive{background:#fff;color:#185FA5}
     .seg-btn.selected{background:#185FA5;color:#fff}
-    .fallback-list{padding:8px 0;overflow-y:auto;flex:1;-webkit-overflow-scrolling:touch}
-    .fallback-item{display:flex;align-items:center;padding:15px 24px;gap:16px;cursor:pointer;border-bottom:1px solid #f0f0f0}
+    .fallback-list{padding:4px 0;overflow-y:auto;flex:1;min-height:0;-webkit-overflow-scrolling:touch}
+    .fallback-item{display:flex;align-items:center;padding:13px 20px;gap:14px;cursor:pointer;border-bottom:1px solid #f0f0f0}
     .fallback-item:active{background:#f9f9f9}
-    .fi-icon{width:42px;height:42px;border-radius:50%;background:#E6F1FB;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:500;color:#185FA5;flex-shrink:0}
+    .fi-icon{width:40px;height:40px;border-radius:50%;background:#E6F1FB;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:500;color:#185FA5;flex-shrink:0}
     .fi-icon.room{background:#f2f2f0;color:#666;border-radius:10px;font-size:11px}
     .fi-icon.block{background:#FFF3E0;color:#E65100;border-radius:10px;font-size:11px}
     .fi-main{flex:1;min-width:0}
-    .fi-name{font-size:16px;font-weight:500}
-    .fi-detail{font-size:12px;color:#888;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .fi-name{font-size:15px;font-weight:500}
+    .fi-detail{font-size:12px;color:#888;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
     .fi-arrow{color:#ccc;font-size:20px;flex-shrink:0}
 
     /* SUCCESS */
@@ -178,10 +185,12 @@
       <div class="tally-item"><div class="tally-val tv-r" id="t-absent">0</div><div class="tally-lbl">Absent</div></div>
     </div>
     <div class="student-list" id="student-list"></div>
-    <div class="att-footer">
-      <span class="progress-lbl" id="prog-lbl"></span>
-      <button class="submit-btn" id="submit-btn" onclick="submitAttendance()">Submit attendance</button>
-    </div>
+  </div><!-- end s-attendance -->
+
+  <!-- FIXED FOOTER — always visible on mobile -->
+  <div id="att-footer-fixed">
+    <span class="progress-lbl" id="prog-lbl"></span>
+    <button class="submit-btn" id="submit-btn" onclick="submitAttendance()">Submit attendance</button>
   </div>
 
   <!-- FALLBACK PICKER -->
@@ -274,6 +283,9 @@ function gasPost(action, payload) {
 function go(id) {
   document.querySelectorAll('#app .screen').forEach(function(s) { s.classList.remove('active'); });
   document.getElementById(id).classList.add('active');
+  // Show fixed footer only on attendance screen
+  var footer = document.getElementById('att-footer-fixed');
+  if (footer) footer.style.display = (id === 's-attendance') ? 'flex' : 'none';
 }
 
 // ── INIT ──────────────────────────────────────────────────────
@@ -535,7 +547,17 @@ function renderFallbackList() {
       });
     });
     Object.keys(blockMap).sort(function(a,b){
-      return (blockMap[a].startTime||'').localeCompare(blockMap[b].startTime||'');
+      // Sort by start time converted to minutes for correct ordering
+      function toMins(t) {
+        if (!t) return 999;
+        var m = t.match(/(\d+):(\d+)\s*(AM|PM)/i);
+        if (!m) return 999;
+        var h = parseInt(m[1]), min = parseInt(m[2]), pm = m[3].toUpperCase()==='PM';
+        if (pm && h!==12) h+=12;
+        if (!pm && h===12) h=0;
+        return h*60+min;
+      }
+      return toMins(blockMap[a].startTime) - toMins(blockMap[b].startTime);
     }).forEach(function(bk){
       var bd=blockMap[bk];
       var time=bd.startTime?bd.startTime+'–'+bd.endTime:'';
@@ -555,8 +577,18 @@ function fi(icon,iconClass,name,detail,onclick) {
     '<div class="fi-arrow">›</div></div>';
 }
 
+function toMins(t) {
+  if (!t) return 999;
+  var m = t.match(/(\d+):(\d+)\s*(AM|PM)/i);
+  if (!m) return 999;
+  var h = parseInt(m[1]), min = parseInt(m[2]), pm = m[3].toUpperCase()==='PM';
+  if (pm && h!==12) h+=12; if (!pm && h===12) h=0;
+  return h*60+min;
+}
+
 function showTeacherClasses(tid) {
   var cls=((scheduleData||{}).teacherSchedule||{})[tid]||[];
+  cls.sort(function(a,b){return toMins(a.startTime)-toMins(b.startTime);});
   var html=backRow(cls.length?cls[0].teacherName:'','teacher');
   cls.forEach(function(c){html+=classRow(c);}); 
   document.getElementById('fallback-list').innerHTML=html;
@@ -564,6 +596,7 @@ function showTeacherClasses(tid) {
 
 function showRoomClasses(rid) {
   var cls=((scheduleData||{}).roomSchedule||{})[rid]||[];
+  cls.sort(function(a,b){return toMins(a.startTime)-toMins(b.startTime);});
   var html=backRow(cls.length?(cls[0].roomName||'Room '+rid):'','room');
   cls.forEach(function(c){html+=classRow(c);});
   document.getElementById('fallback-list').innerHTML=html;
