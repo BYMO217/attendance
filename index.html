@@ -48,37 +48,37 @@
     .detecting-sub{font-size:15px;color:#888}
 
     /* ATTENDANCE */
-    .s-attendance{flex-direction:column}
-    .att-header{padding:18px 24px 14px;border-bottom:1px solid #f0f0f0;flex-shrink:0}
-    .att-class{font-size:22px;font-weight:500}
-    .att-meta{font-size:14px;color:#888;margin-top:4px}
-    .att-pills{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap;align-items:center}
-    .pill{display:inline-block;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:500}
+    .s-attendance{flex-direction:column;height:100vh}
+    .att-header{padding:14px 20px 12px;border-bottom:1px solid #f0f0f0;flex-shrink:0}
+    .att-class{font-size:18px;font-weight:500}
+    .att-meta{font-size:13px;color:#888;margin-top:3px}
+    .att-pills{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;align-items:center}
+    .pill{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:500}
     .pill-blue{background:#E6F1FB;color:#0C447C}
     .pill-gray{background:#f2f2f0;color:#555}
-    .not-your-class{background:none;border:none;font-size:12px;color:#185FA5;cursor:pointer;padding:0;margin-left:auto;font-weight:500}
+    .not-your-class{background:none;border:none;font-size:11px;color:#185FA5;cursor:pointer;padding:0;margin-left:auto;font-weight:500}
     .tally-bar{display:flex;border-bottom:1px solid #f0f0f0;flex-shrink:0}
-    .tally-item{flex:1;padding:12px 0;text-align:center;border-right:1px solid #f0f0f0}
+    .tally-item{flex:1;padding:10px 0;text-align:center;border-right:1px solid #f0f0f0}
     .tally-item:last-child{border-right:none}
-    .tally-val{font-size:22px;font-weight:500}
+    .tally-val{font-size:20px;font-weight:500}
     .tally-lbl{font-size:11px;color:#888;margin-top:2px}
     .tv-g{color:#1D9E75}.tv-r{color:#E24B4A}.tv-a{color:#BA7517}
-    .student-list{overflow-y:auto;flex:1;-webkit-overflow-scrolling:touch}
-    .student-row{display:flex;align-items:center;padding:11px 24px;border-bottom:1px solid #f0f0f0;gap:14px}
-    .avatar{width:38px;height:38px;border-radius:50%;background:#E6F1FB;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:500;color:#185FA5;flex-shrink:0}
-    .student-name{font-size:15px;font-weight:500;flex:1}
-    .status-btns{display:flex;gap:6px}
-    .sbtn{padding:8px 16px;border-radius:7px;font-size:13px;font-weight:500;cursor:pointer;border:2px solid #ddd;background:#f5f5f5;color:#bbb;transition:all .1s}
+    .student-list{overflow-y:auto;flex:1;-webkit-overflow-scrolling:touch;min-height:0}
+    .student-row{display:flex;align-items:center;padding:10px 16px;border-bottom:1px solid #f0f0f0;gap:12px}
+    .avatar{width:36px;height:36px;border-radius:50%;background:#E6F1FB;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:500;color:#185FA5;flex-shrink:0}
+    .student-name{font-size:14px;font-weight:500;flex:1}
+    .status-btns{display:flex;gap:4px}
+    .sbtn{padding:7px 12px;border-radius:7px;font-size:12px;font-weight:500;cursor:pointer;border:2px solid #ddd;background:#f5f5f5;color:#bbb;transition:all .1s}
     .sbtn:active{transform:scale(0.96)}
     .sbtn-present.on{background:#C0DD97;color:#27500A;border-color:#639922}
     .sbtn-tardy.on{background:#FAC775;color:#633806;border-color:#BA7517}
     .sbtn-absent.on{background:#F7C1C1;color:#791F1F;border-color:#E24B4A}
-    .att-footer{padding:14px 24px;border-top:1px solid #f0f0f0;display:flex;gap:14px;align-items:center;flex-shrink:0}
-    .submit-btn{flex:1;padding:16px;border-radius:12px;background:#185FA5;color:#fff;border:none;font-size:16px;font-weight:500;cursor:pointer}
+    .att-footer{padding:12px 16px;border-top:2px solid #f0f0f0;display:flex;gap:12px;align-items:center;flex-shrink:0;background:#fff}
+    .submit-btn{flex:1;padding:14px;border-radius:12px;background:#185FA5;color:#fff;border:none;font-size:15px;font-weight:600;cursor:pointer}
     .submit-btn:active{background:#0C447C}
     .submit-btn:disabled{background:#b0c4de;cursor:default}
-    .progress-lbl{font-size:13px;color:#888;white-space:nowrap}
-    .error-banner{background:#FCEBEB;color:#A32D2D;padding:10px 24px;font-size:13px;border-bottom:1px solid #F7C1C1;display:none;flex-shrink:0}
+    .progress-lbl{font-size:12px;color:#888;white-space:nowrap}
+    .error-banner{background:#FCEBEB;color:#A32D2D;padding:8px 16px;font-size:12px;border-bottom:1px solid #F7C1C1;display:none;flex-shrink:0}
     .error-banner.show{display:block}
 
     /* FALLBACK */
@@ -194,7 +194,7 @@
       <div class="seg">
         <button class="seg-btn selected" id="seg-teacher" onclick="switchTab('teacher')">Teacher</button>
         <button class="seg-btn inactive"  id="seg-room"    onclick="switchTab('room')">Room</button>
-        <button class="seg-btn inactive"  id="seg-block"   onclick="switchTab('block')">Block</button>
+        <button class="seg-btn inactive"  id="seg-block"   onclick="switchTab('block')">Period</button>
       </div>
     </div>
     <div class="fallback-list" id="fallback-list"></div>
