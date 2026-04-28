@@ -7,214 +7,209 @@
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%23185FA5'/><text y='.9em' font-size='80' x='10'>📋</text></svg>">
   <style>
     *{box-sizing:border-box;margin:0;padding:0}
-    html,body{height:100%;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#fff;color:#1a1a1a;-webkit-tap-highlight-color:transparent;overflow:hidden}
-    #app{position:relative;height:100vh;overflow:hidden;background:#fff}
-    .screen{display:none;flex-direction:column;height:100vh;background:#fff;overflow:hidden}
-    .screen.active{display:flex}
-    #s-attendance.active{display:grid}
-    .submit-btn{width:100%;padding:16px;border-radius:12px;background:#185FA5;color:#fff;border:none;font-size:16px;font-weight:600;cursor:pointer;-webkit-appearance:none;display:block}
-    .submit-btn:active{background:#0C447C}
-    .submit-btn:disabled{background:#b0c4de;cursor:default}
-    .progress-lbl{font-size:12px;color:#888;text-align:center;margin-bottom:8px;display:block}
+    html,body{height:100%;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#fff;color:#1a1a1a;-webkit-tap-highlight-color:transparent}
+    #app{height:100vh;overflow:hidden;position:relative}
+
+    /* Every screen is full height, hidden by default */
+    .screen{display:none;position:absolute;top:0;left:0;right:0;bottom:0;background:#fff}
+    .screen.active{display:block}
 
     /* HOME */
-    .s-home{align-items:center;justify-content:center;gap:32px}
+    #s-home{display:none;flex-direction:column;align-items:center;justify-content:center;gap:32px}
+    #s-home.active{display:flex}
     .school-name{font-size:13px;color:#888;letter-spacing:.08em;text-transform:uppercase}
-    .scan-btn{width:220px;height:220px;border-radius:50%;background:#185FA5;border:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;-webkit-tap-highlight-color:transparent;transition:transform .1s}
-    .scan-btn:active{background:#0C447C;transform:scale(0.97)}
-    .scan-btn-label{font-size:20px;font-weight:500;color:#fff}
-    .scan-btn-sub{font-size:13px;color:#B5D4F4}
-    .manual-btn{background:none;border:none;color:#aaa;font-size:13px;cursor:pointer;padding:4px 0}
-    .time-display{font-size:13px;color:#888}
+    .scan-btn{width:200px;height:200px;border-radius:50%;background:#185FA5;border:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px}
+    .scan-btn:active{background:#0C447C}
+    .scan-btn-label{font-size:18px;font-weight:600;color:#fff}
+    .scan-btn-sub{font-size:12px;color:#B5D4F4}
+    .manual-btn{background:none;border:none;color:#aaa;font-size:13px;cursor:pointer;padding:8px}
+    .clock{font-size:13px;color:#aaa}
 
     /* SCANNING */
-    .s-scanning{background:#000;align-items:center;justify-content:center;gap:20px}
-    .scanner-wrap{position:relative;width:300px;height:300px;border-radius:16px;overflow:hidden;background:#111}
-    #qr-video{width:100%;height:100%;object-fit:cover;display:block}
-    .scanner-overlay{position:absolute;inset:0;pointer-events:none}
-    /* Corner brackets */
-    .scanner-overlay::before,.scanner-overlay::after{content:'';position:absolute;width:40px;height:40px;border-color:#fff;border-style:solid}
-    .scanner-overlay::before{top:12px;left:12px;border-width:3px 0 0 3px;border-radius:4px 0 0 0}
-    .scanner-overlay::after{bottom:12px;right:12px;border-width:0 3px 3px 0;border-radius:0 0 4px 0}
-    .corner-tr{position:absolute;top:12px;right:12px;width:40px;height:40px;border-top:3px solid #fff;border-right:3px solid #fff;border-radius:0 4px 0 0}
-    .corner-bl{position:absolute;bottom:12px;left:12px;width:40px;height:40px;border-bottom:3px solid #fff;border-left:3px solid #fff;border-radius:0 0 0 4px}
-    .scan-line{position:absolute;left:12px;right:12px;height:2px;background:linear-gradient(90deg,transparent,#185FA5,transparent);animation:scanmove 2s ease-in-out infinite}
-    @keyframes scanmove{0%,100%{top:20px;opacity:1}50%{top:272px;opacity:1}}
-    .scanner-hint{color:#aaa;font-size:14px;text-align:center}
-    .scan-actions{display:flex;gap:12px}
-    .scan-cancel{color:#ccc;background:none;border:1px solid #444;padding:10px 24px;border-radius:10px;font-size:15px;cursor:pointer}
-    .scan-flip{color:#185FA5;background:none;border:1px solid #185FA5;padding:10px 18px;border-radius:10px;font-size:14px;cursor:pointer;display:flex;align-items:center;gap:6px}
+    #s-scanning{display:none;flex-direction:column;align-items:center;justify-content:center;gap:20px;background:#000}
+    #s-scanning.active{display:flex}
+    .scanner-wrap{position:relative;width:280px;height:280px;border-radius:16px;overflow:hidden;background:#111}
+    #qr-video{width:100%;height:100%;object-fit:cover}
+    .scan-corners{position:absolute;inset:0;pointer-events:none}
+    .sc{position:absolute;width:36px;height:36px;border-color:#fff;border-style:solid}
+    .sc.tl{top:10px;left:10px;border-width:3px 0 0 3px;border-radius:3px 0 0 0}
+    .sc.tr{top:10px;right:10px;border-width:3px 3px 0 0;border-radius:0 3px 0 0}
+    .sc.bl{bottom:10px;left:10px;border-width:0 0 3px 3px;border-radius:0 0 0 3px}
+    .sc.br{bottom:10px;right:10px;border-width:0 3px 3px 0;border-radius:0 0 3px 0}
+    .scan-line{position:absolute;left:10px;right:10px;height:2px;background:#185FA5;animation:scanmove 2s ease-in-out infinite}
+    @keyframes scanmove{0%,100%{top:18px}50%{top:250px}}
+    .scan-hint{color:#aaa;font-size:14px}
+    .scan-btns{display:flex;gap:12px}
+    .scan-cancel{color:#ccc;background:none;border:1px solid #555;padding:10px 22px;border-radius:10px;font-size:14px;cursor:pointer}
+    .scan-flip{color:#185FA5;background:none;border:1px solid #185FA5;padding:10px 16px;border-radius:10px;font-size:13px;cursor:pointer}
 
     /* DETECTING */
-    .s-detecting{align-items:center;justify-content:center;gap:18px}
-    .spinner{width:44px;height:44px;border:3px solid #eee;border-top-color:#185FA5;border-radius:50%;animation:spin .7s linear infinite}
+    #s-detecting{display:none;flex-direction:column;align-items:center;justify-content:center;gap:16px}
+    #s-detecting.active{display:flex}
+    .spinner{width:40px;height:40px;border:3px solid #eee;border-top-color:#185FA5;border-radius:50%;animation:spin .7s linear infinite}
     @keyframes spin{to{transform:rotate(360deg)}}
-    .detecting-room{font-size:22px;font-weight:500}
-    .detecting-sub{font-size:15px;color:#888}
+    .det-room{font-size:20px;font-weight:500}
+    .det-sub{font-size:14px;color:#888}
 
-    /* ATTENDANCE - CSS Grid guarantees footer is always visible */
-    .s-attendance{display:grid!important;grid-template-rows:auto auto auto 1fr auto;overflow:hidden}
-    .att-header{padding:14px 20px 12px;border-bottom:1px solid #f0f0f0}
-    .att-class{font-size:18px;font-weight:500}
-    .att-meta{font-size:13px;color:#888;margin-top:3px}
-    .att-pills{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;align-items:center}
-    .pill{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:500}
+    /* ATTENDANCE — key layout using absolute positioning */
+    #s-attendance{display:none}
+    #s-attendance.active{display:block}
+    .att-top{position:absolute;top:0;left:0;right:0;background:#fff;z-index:2}
+    .att-header{padding:14px 18px 10px;border-bottom:1px solid #eee}
+    .att-class{font-size:17px;font-weight:600}
+    .att-meta{font-size:12px;color:#888;margin-top:2px}
+    .att-pills{display:flex;gap:5px;margin-top:7px;flex-wrap:wrap;align-items:center}
+    .pill{padding:3px 9px;border-radius:20px;font-size:11px;font-weight:500}
     .pill-blue{background:#E6F1FB;color:#0C447C}
     .pill-gray{background:#f2f2f0;color:#555}
-    .not-your-class{background:none;border:none;font-size:11px;color:#185FA5;cursor:pointer;padding:0;margin-left:auto;font-weight:500}
-    .tally-bar{display:flex;border-bottom:1px solid #f0f0f0}
-    .tally-item{flex:1;padding:10px 0;text-align:center;border-right:1px solid #f0f0f0}
+    .not-your-class{background:none;border:none;font-size:11px;color:#185FA5;cursor:pointer;padding:0;margin-left:auto}
+    .tally-bar{display:flex;border-bottom:1px solid #eee}
+    .tally-item{flex:1;padding:9px 0;text-align:center;border-right:1px solid #eee}
     .tally-item:last-child{border-right:none}
-    .tally-val{font-size:20px;font-weight:500}
-    .tally-lbl{font-size:11px;color:#888;margin-top:2px}
+    .tally-val{font-size:18px;font-weight:600}
+    .tally-lbl{font-size:10px;color:#888;margin-top:1px}
     .tv-g{color:#1D9E75}.tv-r{color:#E24B4A}.tv-a{color:#BA7517}
-    .error-banner{background:#FCEBEB;color:#A32D2D;padding:8px 16px;font-size:12px;border-bottom:1px solid #F7C1C1;display:none}
+    .error-banner{background:#FCEBEB;color:#A32D2D;padding:7px 16px;font-size:12px;border-bottom:1px solid #F7C1C1;display:none}
     .error-banner.show{display:block}
-    /* Row 4: student list takes all remaining space and scrolls */
-    .student-list{overflow-y:auto;-webkit-overflow-scrolling:touch}
-    .student-row{display:flex;align-items:center;padding:10px 16px;border-bottom:1px solid #f0f0f0;gap:12px}
-    .avatar{width:36px;height:36px;border-radius:50%;background:#E6F1FB;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:500;color:#185FA5;flex-shrink:0}
+
+    /* Student list scrolls between fixed top and fixed bottom */
+    .att-scroll{position:absolute;left:0;right:0;overflow-y:auto;-webkit-overflow-scrolling:touch}
+    .student-row{display:flex;align-items:center;padding:9px 14px;border-bottom:1px solid #f0f0f0;gap:10px}
+    .avatar{width:34px;height:34px;border-radius:50%;background:#E6F1FB;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:#185FA5;flex-shrink:0}
     .student-name{font-size:14px;font-weight:500;flex:1}
-    .status-btns{display:flex;gap:4px}
-    .sbtn{padding:7px 12px;border-radius:7px;font-size:12px;font-weight:500;cursor:pointer;border:2px solid #ddd;background:#f5f5f5;color:#bbb;transition:all .1s}
-    .sbtn:active{transform:scale(0.96)}
+    .status-btns{display:flex;gap:3px;flex-shrink:0}
+    .sbtn{padding:6px 11px;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer;border:2px solid #ddd;background:#f5f5f5;color:#bbb}
+    .sbtn:active{opacity:.7}
     .sbtn-present.on{background:#C0DD97;color:#27500A;border-color:#639922}
     .sbtn-tardy.on{background:#FAC775;color:#633806;border-color:#BA7517}
     .sbtn-absent.on{background:#F7C1C1;color:#791F1F;border-color:#E24B4A}
-    /* Row 5: footer always visible at bottom */
-    .att-footer{padding:12px 16px;border-top:2px solid #eee;display:flex;gap:10px;align-items:center;background:#fff}
-    .submit-btn{flex:1;padding:16px;border-radius:12px;background:#185FA5;color:#fff;border:none;font-size:16px;font-weight:600;cursor:pointer;-webkit-appearance:none}
+
+    /* Footer always at bottom */
+    .att-bottom{position:absolute;bottom:0;left:0;right:0;padding:10px 14px;border-top:2px solid #eee;background:#fff;display:flex;align-items:center;gap:10px;z-index:2}
+    .submit-btn{flex:1;padding:15px;border-radius:12px;background:#185FA5;color:#fff;border:none;font-size:15px;font-weight:700;cursor:pointer}
     .submit-btn:active{background:#0C447C}
-    .submit-btn:disabled{background:#b0c4de;cursor:default}
-    .progress-lbl{font-size:12px;color:#888;white-space:nowrap;flex-shrink:0}
+    .submit-btn:disabled{background:#b0c4de}
+    .prog-lbl{font-size:12px;color:#888;white-space:nowrap;flex-shrink:0}
 
     /* FALLBACK */
-    .s-fallback{flex-direction:column}
-    .fallback-header{padding:16px 20px;border-bottom:1px solid #f0f0f0;display:flex;align-items:center;gap:16px;flex-shrink:0}
-    .back-link{background:none;border:none;cursor:pointer;color:#888;font-size:26px;padding:0;line-height:1;flex-shrink:0}
-    .fallback-title{font-size:17px;font-weight:500}
-    .seg-wrap{padding:14px 20px 0;flex-shrink:0}
+    #s-fallback{display:none;flex-direction:column}
+    #s-fallback.active{display:flex}
+    .fb-header{padding:14px 18px;border-bottom:1px solid #eee;display:flex;align-items:center;gap:14px;flex-shrink:0}
+    .fb-back{background:none;border:none;font-size:24px;color:#888;cursor:pointer;padding:0;line-height:1}
+    .fb-title{font-size:17px;font-weight:600}
+    .seg-wrap{padding:12px 18px 0;flex-shrink:0}
     .seg{display:grid;grid-template-columns:1fr 1fr 1fr;border:2px solid #185FA5;border-radius:10px;overflow:hidden}
-    .seg-btn{padding:11px 0;font-size:13px;font-weight:500;text-align:center;cursor:pointer;border:none;transition:background .15s,color .15s}
+    .seg-btn{padding:10px 0;font-size:13px;font-weight:600;text-align:center;cursor:pointer;border:none}
     .seg-btn:not(:last-child){border-right:2px solid #185FA5}
-    .seg-btn.inactive{background:#fff;color:#185FA5}
-    .seg-btn.selected{background:#185FA5;color:#fff}
-    .fallback-list{padding:4px 0;overflow-y:auto;flex:1;min-height:0;-webkit-overflow-scrolling:touch}
-    .fallback-item{display:flex;align-items:center;padding:13px 20px;gap:14px;cursor:pointer;border-bottom:1px solid #f0f0f0}
-    .fallback-item:active{background:#f9f9f9}
-    .fi-icon{width:40px;height:40px;border-radius:50%;background:#E6F1FB;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:500;color:#185FA5;flex-shrink:0}
-    .fi-icon.room{background:#f2f2f0;color:#666;border-radius:10px;font-size:11px}
-    .fi-icon.block{background:#FFF3E0;color:#E65100;border-radius:10px;font-size:11px}
-    .fi-main{flex:1;min-width:0}
-    .fi-name{font-size:15px;font-weight:500}
-    .fi-detail{font-size:12px;color:#888;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-    .fi-arrow{color:#ccc;font-size:20px;flex-shrink:0}
+    .seg-btn.on{background:#185FA5;color:#fff}
+    .seg-btn.off{background:#fff;color:#185FA5}
+    .fb-list{overflow-y:auto;flex:1;-webkit-overflow-scrolling:touch;padding:4px 0}
+    .fb-item{display:flex;align-items:center;padding:12px 18px;gap:12px;cursor:pointer;border-bottom:1px solid #f0f0f0}
+    .fb-item:active{background:#f9f9f9}
+    .fb-icon{width:38px;height:38px;border-radius:50%;background:#E6F1FB;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;color:#185FA5;flex-shrink:0}
+    .fb-icon.room{background:#f2f2f0;color:#666;border-radius:8px;font-size:10px}
+    .fb-icon.period{background:#FFF3E0;color:#E65100;border-radius:8px;font-size:10px}
+    .fb-main{flex:1;min-width:0}
+    .fb-name{font-size:15px;font-weight:500}
+    .fb-detail{font-size:11px;color:#888;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .fb-arrow{color:#ccc;font-size:18px}
+    .fb-back-row{padding:10px 18px;display:flex;align-items:center;gap:10px;border-bottom:1px solid #eee;background:#f9f9f9;flex-shrink:0}
 
     /* SUCCESS */
-    .s-success{align-items:center;justify-content:center;gap:22px}
-    .success-icon{width:90px;height:90px;border-radius:50%;background:#E1F5EE;display:flex;align-items:center;justify-content:center}
-    .success-title{font-size:24px;font-weight:500}
-    .success-sub{font-size:15px;color:#888;text-align:center;max-width:300px;line-height:1.6}
-    .done-btn{padding:14px 48px;border-radius:12px;background:#185FA5;color:#fff;border:none;font-size:16px;font-weight:500;cursor:pointer;margin-top:10px}
+    #s-success{display:none;flex-direction:column;align-items:center;justify-content:center;gap:20px}
+    #s-success.active{display:flex}
+    .success-icon{width:80px;height:80px;border-radius:50%;background:#E1F5EE;display:flex;align-items:center;justify-content:center}
+    .success-title{font-size:22px;font-weight:600}
+    .success-sub{font-size:14px;color:#888;text-align:center;max-width:280px;line-height:1.6}
+    .done-btn{padding:14px 44px;border-radius:12px;background:#185FA5;color:#fff;border:none;font-size:15px;font-weight:600;cursor:pointer;margin-top:8px}
 
     /* TOAST */
-    .toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%);background:#222;color:#fff;padding:12px 22px;border-radius:10px;font-size:14px;opacity:0;transition:opacity .25s;pointer-events:none;z-index:99;white-space:nowrap;max-width:90vw;text-align:center}
+    .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#222;color:#fff;padding:10px 20px;border-radius:10px;font-size:13px;opacity:0;transition:opacity .25s;pointer-events:none;z-index:999;max-width:90vw;text-align:center}
     .toast.show{opacity:1}
   </style>
 </head>
 <body>
 <div id="app">
 
-  <!-- HOME -->
-  <div id="s-home" class="screen s-home active">
+  <div id="s-home" class="screen">
     <div class="school-name">BYMO Attendance</div>
     <button class="scan-btn" onclick="startScan()">
-      <svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
         <rect x="3" y="3" width="5" height="5" rx="1"/><rect x="16" y="3" width="5" height="5" rx="1"/>
         <rect x="3" y="16" width="5" height="5" rx="1"/>
         <rect x="13" y="13" width="2" height="2"/><rect x="17" y="13" width="2" height="2"/>
         <rect x="13" y="17" width="2" height="2"/><rect x="17" y="17" width="2" height="2"/>
       </svg>
-      <span class="scan-btn-label">Scan room QR</span>
+      <span class="scan-btn-label">Scan QR code</span>
       <span class="scan-btn-sub">Tap to open camera</span>
     </button>
     <button class="manual-btn" onclick="loadFallback()">Choose class manually</button>
-    <div class="time-display" id="clock"></div>
+    <div class="clock" id="clock"></div>
   </div>
 
-  <!-- SCANNING — live camera with jsQR -->
-  <div id="s-scanning" class="screen s-scanning">
-    <div class="scanner-hint">Point at the room QR code</div>
+  <div id="s-scanning" class="screen">
+    <div class="scan-hint">Point camera at room QR code</div>
     <div class="scanner-wrap">
       <video id="qr-video" autoplay playsinline muted></video>
-      <div class="scanner-overlay"></div>
-      <div class="corner-tr"></div>
-      <div class="corner-bl"></div>
+      <div class="scan-corners">
+        <div class="sc tl"></div><div class="sc tr"></div>
+        <div class="sc bl"></div><div class="sc br"></div>
+      </div>
       <div class="scan-line"></div>
     </div>
-    <div class="scan-actions">
+    <div class="scan-btns">
       <button class="scan-cancel" onclick="stopScan()">Cancel</button>
-      <button class="scan-flip"   onclick="flipCamera()">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M1 4v6h6"/><path d="M23 20v-6h-6"/>
-          <path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4-4.64 4.36A9 9 0 0 1 3.51 15"/>
-        </svg>
-        Flip
-      </button>
+      <button class="scan-flip" onclick="flipCamera()">Flip</button>
     </div>
   </div>
 
-  <!-- DETECTING -->
-  <div id="s-detecting" class="screen s-detecting">
+  <div id="s-detecting" class="screen">
     <div class="spinner"></div>
-    <div class="detecting-room" id="det-room"></div>
-    <div class="detecting-sub"  id="det-sub">Looking up current period…</div>
+    <div class="det-room" id="det-room"></div>
+    <div class="det-sub" id="det-sub">Looking up current period…</div>
   </div>
 
-  <!-- ATTENDANCE -->
-  <div id="s-attendance" class="screen s-attendance">
-    <div class="att-header">
-      <div class="att-class" id="att-class"></div>
-      <div class="att-meta"  id="att-meta"></div>
-      <div class="att-pills" id="att-pills"></div>
+  <div id="s-attendance" class="screen">
+    <div class="att-top" id="att-top">
+      <div class="att-header">
+        <div class="att-class" id="att-class"></div>
+        <div class="att-meta" id="att-meta"></div>
+        <div class="att-pills" id="att-pills"></div>
+      </div>
+      <div class="error-banner" id="att-error"></div>
+      <div class="tally-bar">
+        <div class="tally-item"><div class="tally-val tv-g" id="t-present">0</div><div class="tally-lbl">Present</div></div>
+        <div class="tally-item"><div class="tally-val tv-a" id="t-tardy">0</div><div class="tally-lbl">Tardy</div></div>
+        <div class="tally-item"><div class="tally-val tv-r" id="t-absent">0</div><div class="tally-lbl">Absent</div></div>
+      </div>
     </div>
-    <div id="att-error" class="error-banner"></div>
-    <div class="tally-bar">
-      <div class="tally-item"><div class="tally-val tv-g" id="t-present">0</div><div class="tally-lbl">Present</div></div>
-      <div class="tally-item"><div class="tally-val tv-a" id="t-tardy">0</div><div class="tally-lbl">Tardy</div></div>
-      <div class="tally-item"><div class="tally-val tv-r" id="t-absent">0</div><div class="tally-lbl">Absent</div></div>
-    </div>
-    <div class="student-list" id="student-list"></div>
-    <div class="att-footer">
-      <span class="progress-lbl" id="prog-lbl"></span>
+    <div class="att-scroll" id="student-list"></div>
+    <div class="att-bottom">
+      <span class="prog-lbl" id="prog-lbl"></span>
       <button class="submit-btn" id="submit-btn" onclick="submitAttendance()">Submit attendance</button>
     </div>
   </div>
 
-  <!-- FALLBACK PICKER -->
-  <div id="s-fallback" class="screen s-fallback">
-    <div class="fallback-header">
-      <button class="back-link" onclick="go('s-home')">←</button>
-      <div class="fallback-title">Select a class</div>
+  <div id="s-fallback" class="screen">
+    <div class="fb-header">
+      <button class="fb-back" onclick="go('s-home')">←</button>
+      <div class="fb-title">Select a class</div>
     </div>
     <div class="seg-wrap">
       <div class="seg">
-        <button class="seg-btn selected" id="seg-teacher" onclick="switchTab('teacher')">Teacher</button>
-        <button class="seg-btn inactive"  id="seg-room"    onclick="switchTab('room')">Room</button>
-        <button class="seg-btn inactive"  id="seg-block"   onclick="switchTab('block')">Period</button>
+        <button class="seg-btn on"  id="seg-teacher" onclick="switchTab('teacher')">Teacher</button>
+        <button class="seg-btn off" id="seg-room"    onclick="switchTab('room')">Room</button>
+        <button class="seg-btn off" id="seg-block"   onclick="switchTab('block')">Period</button>
       </div>
     </div>
-    <div class="fallback-list" id="fallback-list"></div>
+    <div class="fb-list" id="fb-list"></div>
   </div>
 
-  <!-- SUCCESS -->
-  <div id="s-success" class="screen s-success">
+  <div id="s-success" class="screen">
     <div class="success-icon">
-      <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#1D9E75" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-        <polyline points="20 6 9 17 4 12"/>
-      </svg>
+      <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#1D9E75" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
     </div>
-    <div class="success-title">Attendance submitted</div>
+    <div class="success-title">Submitted!</div>
     <div class="success-sub" id="success-sub"></div>
     <button class="done-btn" onclick="go('s-home')">Done</button>
   </div>
@@ -224,10 +219,7 @@
 
 <script src="https://unpkg.com/jsqr@1.4.0/dist/jsQR.js"></script>
 <script>
-// ── CONFIG ────────────────────────────────────────────────────
-var GAS_URL = 'https://script.google.com/macros/s/AKfycbzCovXcc1wPLjGeqhp4GDWdB_WuOYD5P9Z5JGgKtP8Rmq3PwuWvcqHIV0g9m5mMniOvDg/exec';
-
-// ── STATE ─────────────────────────────────────────────────────
+var GAS_URL     = 'https://script.google.com/macros/s/AKfycbzCovXcc1wPLjGeqhp4GDWdB_WuOYD5P9Z5JGgKtP8Rmq3PwuWvcqHIV0g9m5mMniOvDg/exec';
 var attState    = {};
 var currentClass= null;
 var scheduleData= null;
@@ -236,51 +228,46 @@ var videoStream = null;
 var scanInterval= null;
 var facingMode  = 'environment';
 
-// ── API — fetch via CORS proxy ────────────────────────────────
-// GAS /exec redirects before serving, breaking both fetch() and JSONP.
-// corsproxy.io forwards the request and adds CORS headers.
-var jsonpCounter = 0;
-
+// ── API ───────────────────────────────────────────────────────
+var _jc = 0;
 function gasGet(action, params) {
   var url = GAS_URL + '?action=' + encodeURIComponent(action);
-  if (params) Object.keys(params).forEach(function(k) {
+  if (params) Object.keys(params).forEach(function(k){
     url += '&' + encodeURIComponent(k) + '=' + encodeURIComponent(params[k]);
   });
-  var proxied = 'https://corsproxy.io/?' + encodeURIComponent(url);
-  return fetch(proxied).then(function(r) { return r.json(); });
-}
-
-function gasPost(action, payload) {
-  var url     = GAS_URL + '?action=' + encodeURIComponent(action) +
-                '&payload=' + encodeURIComponent(JSON.stringify(payload));
-  var proxied = 'https://corsproxy.io/?' + encodeURIComponent(url);
-  return fetch(proxied).then(function(r) { return r.json(); });
-}
-
-function jsonp(url) {
-  // Keep for compatibility but route through proxy
-  var proxied = 'https://corsproxy.io/?' + encodeURIComponent(url);
-  return fetch(proxied).then(function(r) { return r.json(); });
-}
-
-function gasGet(action, params) {
-  var url = GAS_URL + '?action=' + encodeURIComponent(action);
-  if (params) Object.keys(params).forEach(function(k) {
-    url += '&' + encodeURIComponent(k) + '=' + encodeURIComponent(params[k]);
+  return new Promise(function(res, rej) {
+    var cb = '__gc' + (++_jc);
+    var s  = document.createElement('script');
+    var t  = setTimeout(function(){ cleanup(); rej(new Error('Timeout')); }, 30000);
+    function cleanup(){ clearTimeout(t); delete window[cb]; s.parentNode&&s.parentNode.removeChild(s); }
+    window[cb] = function(d){ cleanup(); res(d); };
+    s.onerror  = function(){ cleanup(); rej(new Error('Network error')); };
+    s.src = url + '&callback=' + cb;
+    document.head.appendChild(s);
   });
-  return jsonp(url);
 }
-
 function gasPost(action, payload) {
-  var url = GAS_URL + '?action=' + encodeURIComponent(action) +
-            '&payload=' + encodeURIComponent(JSON.stringify(payload));
-  return jsonp(url);
+  return gasGet(action, { payload: JSON.stringify(payload) });
 }
 
 // ── ROUTING ───────────────────────────────────────────────────
 function go(id) {
-  document.querySelectorAll('#app .screen').forEach(function(s) { s.classList.remove('active'); });
+  document.querySelectorAll('.screen').forEach(function(s){ s.classList.remove('active'); });
   document.getElementById(id).classList.add('active');
+  // Recalculate attendance scroll bounds whenever we show that screen
+  if (id === 's-attendance') setTimeout(fixAttLayout, 50);
+}
+
+function fixAttLayout() {
+  var top    = document.getElementById('att-top');
+  var list   = document.getElementById('student-list');
+  var bottom = document.querySelector('.att-bottom');
+  if (!top || !list || !bottom) return;
+  var topH    = top.offsetHeight;
+  var botH    = bottom.offsetHeight;
+  var winH    = window.innerHeight;
+  list.style.top    = topH + 'px';
+  list.style.bottom = botH + 'px';
 }
 
 // ── INIT ──────────────────────────────────────────────────────
@@ -288,64 +275,43 @@ window.addEventListener('load', function() {
   tick();
   var m = window.location.search.match(/[?&]room=([^&]+)/);
   if (m) loadRoom(decodeURIComponent(m[1]));
+  else go('s-home');
 });
+window.addEventListener('resize', fixAttLayout);
 
-// ── LIVE CAMERA SCAN ──────────────────────────────────────────
-function startScan() {
-  go('s-scanning');
-  openCamera();
-}
+// ── CAMERA ───────────────────────────────────────────────────
+function startScan() { go('s-scanning'); openCamera(); }
 
 function openCamera() {
   if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-    showToast('Camera not supported — use manual picker');
-    go('s-home');
-    return;
+    showToast('Camera not available'); go('s-home'); return;
   }
-
-  navigator.mediaDevices.getUserMedia({
-    video: {
-      facingMode: { ideal: facingMode },
-      width:  { ideal: 1280 },
-      height: { ideal: 720 },
-    }
-  })
+  navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: facingMode }, width: { ideal: 1280 }, height: { ideal: 720 } } })
   .then(function(stream) {
     videoStream = stream;
-    var video   = document.getElementById('qr-video');
-    video.srcObject = stream;
-    video.play();
-
-    var canvas  = document.createElement('canvas');
-    var ctx     = canvas.getContext('2d', { willReadFrequently: true });
-
+    var video = document.getElementById('qr-video');
+    video.srcObject = stream; video.play();
+    var canvas = document.createElement('canvas');
+    var ctx    = canvas.getContext('2d', { willReadFrequently: true });
     scanInterval = setInterval(function() {
       if (video.readyState !== video.HAVE_ENOUGH_DATA) return;
-      canvas.width  = video.videoWidth;
-      canvas.height = video.videoHeight;
+      canvas.width = video.videoWidth; canvas.height = video.videoHeight;
       ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
       var img  = ctx.getImageData(0, 0, canvas.width, canvas.height);
       var code = jsQR(img.data, img.width, img.height, { inversionAttempts: 'dontInvert' });
-      if (code && code.data) {
-        stopScan();
-        parseQR(code.data);
-      }
+      if (code && code.data) { stopScan(); parseQR(code.data); }
     }, 200);
   })
   .catch(function(err) {
     stopScan();
-    if (err.name === 'NotAllowedError') {
-      showToast('Camera permission denied — allow in browser settings');
-    } else {
-      showToast('Camera error: ' + err.message);
-    }
+    showToast(err.name === 'NotAllowedError' ? 'Camera permission denied' : 'Camera error: ' + err.message);
     go('s-home');
   });
 }
 
 function stopScan() {
   if (scanInterval) { clearInterval(scanInterval); scanInterval = null; }
-  if (videoStream)  { videoStream.getTracks().forEach(function(t) { t.stop(); }); videoStream = null; }
+  if (videoStream)  { videoStream.getTracks().forEach(function(t){ t.stop(); }); videoStream = null; }
   var v = document.getElementById('qr-video');
   if (v) v.srcObject = null;
   go('s-home');
@@ -354,11 +320,10 @@ function stopScan() {
 function flipCamera() {
   facingMode = facingMode === 'environment' ? 'user' : 'environment';
   if (scanInterval) { clearInterval(scanInterval); scanInterval = null; }
-  if (videoStream)  { videoStream.getTracks().forEach(function(t) { t.stop(); }); videoStream = null; }
+  if (videoStream)  { videoStream.getTracks().forEach(function(t){ t.stop(); }); videoStream = null; }
   openCamera();
 }
 
-// ── QR PARSE ─────────────────────────────────────────────────
 function parseQR(data) {
   var m = data.match(/[?&]room=([^&\s]+)/);
   loadRoom(m ? decodeURIComponent(m[1]) : data.trim());
@@ -366,76 +331,72 @@ function parseQR(data) {
 
 // ── ROOM LOOKUP ───────────────────────────────────────────────
 function loadRoom(roomId) {
-  if (!roomId) { showToast('Invalid QR code'); return; }
+  if (!roomId) { showToast('Invalid QR'); return; }
   go('s-detecting');
   document.getElementById('det-room').textContent = 'Room ' + roomId;
   document.getElementById('det-sub').textContent  = 'Looking up current period…';
   gasGet('getClassForRoom', { roomId: roomId })
     .then(function(r) {
-      if (r.error)         { showToast(r.error); go('s-home'); return; }
-      if (r.noCurrentClass){ showToast(r.reason || 'No class right now'); loadFallback(); return; }
+      if (r.error)          { showToast(r.error); go('s-home'); return; }
+      if (r.noCurrentClass) { showToast(r.reason || 'No class right now'); loadFallback(); return; }
       openAttendance(r);
     })
     .catch(function(e) { showToast('Error: ' + e.message); go('s-home'); });
 }
 
-// ── ATTENDANCE FORM ───────────────────────────────────────────
+// ── ATTENDANCE ────────────────────────────────────────────────
 function openAttendance(cls) {
   currentClass = cls;
   attState     = {};
   document.getElementById('att-class').textContent = cls.className || cls.sectionName || '';
   document.getElementById('att-meta').textContent  =
-    [cls.teacherName, cls.day, cls.period,
-     cls.startTime ? cls.startTime + '–' + cls.endTime : '']
-    .filter(Boolean).join(' · ');
+    [cls.teacherName, cls.day, cls.period, cls.startTime ? cls.startTime+'–'+cls.endTime : ''].filter(Boolean).join(' · ');
   var pills = '';
   if (cls.roomName) pills += '<span class="pill pill-blue">' + cls.roomName + '</span>';
-  if (cls.period)   pills += '<span class="pill pill-gray">' + cls.period   + '</span>';
+  if (cls.period)   pills += '<span class="pill pill-gray">' + cls.period + '</span>';
   pills += '<button class="not-your-class" onclick="loadFallback()">Not your class?</button>';
   document.getElementById('att-pills').innerHTML = pills;
   document.getElementById('att-error').classList.remove('show');
   var students = cls.students || [];
-  students.forEach(function(s) { attState[s.id] = 'present'; });
+  students.forEach(function(s){ attState[s.id] = 'present'; });
   renderStudents(students);
   updateTally();
   go('s-attendance');
 }
 
 function renderStudents(students) {
+  var html = '';
   if (!students || !students.length) {
-    document.getElementById('student-list').innerHTML =
-      '<div style="padding:40px;text-align:center;color:#aaa">No students found</div>';
-    updateProgress(); return;
+    html = '<div style="padding:32px;text-align:center;color:#aaa">No students</div>';
+  } else {
+    students.forEach(function(s) {
+      html += '<div class="student-row" id="row-'+s.id+'">' +
+        '<div class="avatar">'+initials(s.name)+'</div>' +
+        '<div class="student-name">'+s.name+'</div>' +
+        '<div class="status-btns">' +
+          '<button class="sbtn sbtn-present on" onclick="setStatus(\''+s.id+'\',\'present\')">P</button>' +
+          '<button class="sbtn sbtn-tardy"      onclick="setStatus(\''+s.id+'\',\'tardy\')">T</button>' +
+          '<button class="sbtn sbtn-absent"     onclick="setStatus(\''+s.id+'\',\'absent\')">A</button>' +
+        '</div></div>';
+    });
   }
-  document.getElementById('student-list').innerHTML = students.map(function(s) {
-    return '<div class="student-row" id="row-' + s.id + '">' +
-      '<div class="avatar">' + initials(s.name) + '</div>' +
-      '<div class="student-name">' + s.name + '</div>' +
-      '<div class="status-btns">' +
-        '<button class="sbtn sbtn-present on" onclick="setStatus(\'' + s.id + '\',\'present\')">P</button>' +
-        '<button class="sbtn sbtn-tardy"      onclick="setStatus(\'' + s.id + '\',\'tardy\')">T</button>' +
-        '<button class="sbtn sbtn-absent"     onclick="setStatus(\'' + s.id + '\',\'absent\')">A</button>' +
-      '</div></div>';
-  }).join('');
+  document.getElementById('student-list').innerHTML = html;
   updateProgress();
 }
 
 function setStatus(id, status) {
   attState[id] = status;
-  var row = document.getElementById('row-' + id);
+  var row = document.getElementById('row-'+id);
   if (!row) return;
-  row.querySelectorAll('.sbtn').forEach(function(b) { b.classList.remove('on'); });
+  row.querySelectorAll('.sbtn').forEach(function(b){ b.classList.remove('on'); });
   var btns = row.querySelectorAll('.sbtn');
-  var idx  = { present: 0, tardy: 1, absent: 2 }[status];
-  if (btns[idx]) btns[idx].classList.add('on');
+  btns[{present:0,tardy:1,absent:2}[status]].classList.add('on');
   updateTally(); updateProgress();
 }
 
 function updateTally() {
   var p=0,t=0,a=0;
-  Object.values(attState).forEach(function(s){
-    if(s==='present')p++; else if(s==='tardy')t++; else if(s==='absent')a++;
-  });
+  Object.values(attState).forEach(function(s){ if(s==='present')p++; else if(s==='tardy')t++; else a++; });
   document.getElementById('t-present').textContent=p;
   document.getElementById('t-tardy').textContent=t;
   document.getElementById('t-absent').textContent=a;
@@ -444,49 +405,39 @@ function updateTally() {
 function updateProgress() {
   var total  = Object.keys(attState).length;
   var marked = Object.values(attState).filter(Boolean).length;
-  var lbl = document.getElementById('prog-lbl');
-  var btn = document.getElementById('submit-btn');
-  if (lbl) lbl.textContent = marked + ' / ' + total;
-  if (btn) btn.disabled = marked < total;
+  document.getElementById('prog-lbl').textContent = marked+'/'+total;
+  document.getElementById('submit-btn').disabled  = marked < total;
 }
 
 function submitAttendance() {
   if (!currentClass) return;
   var btn = document.getElementById('submit-btn');
   btn.disabled = true; btn.textContent = 'Submitting…';
-  var today   = new Date();
-  var dateStr = today.getFullYear() + '-' +
-    String(today.getMonth()+1).padStart(2,'0') + '-' +
-    String(today.getDate()).padStart(2,'0');
+  var today = new Date();
+  var dateStr = today.getFullYear()+'-'+String(today.getMonth()+1).padStart(2,'0')+'-'+String(today.getDate()).padStart(2,'0');
   var payload = {
     sectionId:   currentClass.sectionId,
-    className:   currentClass.className   || currentClass.sectionName || '',
+    className:   currentClass.className || currentClass.sectionName || '',
     teacherName: currentClass.teacherName || '',
     roomName:    currentClass.roomName    || '',
     period:      currentClass.period      || '',
     date:        dateStr,
-    records:     Object.keys(attState).map(function(id) {
-      return { studentId: id, status: attState[id], note: '' };
-    }),
+    records:     Object.keys(attState).map(function(id){ return { studentId:id, status:attState[id], note:'' }; }),
   };
   gasPost('submitAttendance', payload)
     .then(function(r) {
       btn.disabled = false; btn.textContent = 'Submit attendance';
       if (r.success) {
-        document.getElementById('success-sub').textContent =
-          payload.records.length + ' students marked for ' + payload.className;
+        document.getElementById('success-sub').textContent = payload.records.length + ' students submitted for ' + payload.className;
         go('s-success');
       } else {
         var e = document.getElementById('att-error');
-        e.textContent = r.error || 'Submission failed — please try again';
+        e.textContent = r.error || 'Submission failed';
         e.classList.add('show');
-        showToast(r.queued ? 'Queued for retry' : 'Submission failed');
+        fixAttLayout();
       }
     })
-    .catch(function(e) {
-      btn.disabled = false; btn.textContent = 'Submit attendance';
-      showToast('Error: ' + e.message);
-    });
+    .catch(function(e) { btn.disabled=false; btn.textContent='Submit attendance'; showToast('Error: '+e.message); });
 }
 
 // ── FALLBACK PICKER ───────────────────────────────────────────
@@ -495,20 +446,25 @@ function loadFallback() {
   go('s-detecting');
   document.getElementById('det-sub').textContent = 'Loading schedule…';
   gasGet('getAllScheduleData')
-    .then(function(data) {
-      scheduleData = data;
-      go('s-fallback');
-      renderFallbackList();
-    })
-    .catch(function(e) { showToast('Could not load schedule: ' + e.message); go('s-home'); });
+    .then(function(data) { scheduleData = data; go('s-fallback'); renderFallbackList(); })
+    .catch(function(e) { showToast('Could not load: ' + e.message); go('s-home'); });
 }
 
 function switchTab(tab) {
   fallbackTab = tab;
-  ['teacher','room','block'].forEach(function(t) {
-    document.getElementById('seg-' + t).className = 'seg-btn ' + (t===tab?'selected':'inactive');
+  ['teacher','room','block'].forEach(function(t){
+    document.getElementById('seg-'+t).className = 'seg-btn ' + (t===tab?'on':'off');
   });
   renderFallbackList();
+}
+
+function toMins(t) {
+  if (!t) return 999;
+  var m = t.match(/(\d+):(\d+)\s*(AM|PM)/i);
+  if (!m) return 999;
+  var h=parseInt(m[1]), mn=parseInt(m[2]), pm=m[3].toUpperCase()==='PM';
+  if(pm&&h!==12)h+=12; if(!pm&&h===12)h=0;
+  return h*60+mn;
 }
 
 function renderFallbackList() {
@@ -518,156 +474,117 @@ function renderFallbackList() {
     var map = scheduleData.teacherSchedule || {};
     Object.keys(map).sort(function(a,b){
       return ((map[a][0]||{}).teacherName||'').localeCompare((map[b][0]||{}).teacherName||'');
-    }).forEach(function(tid) {
+    }).forEach(function(tid){
       var cls=map[tid]; if(!cls||!cls.length) return;
-      html += fi(initials(cls[0].teacherName||''), '', cls[0].teacherName||'Unknown',
-        cls.length+' class'+(cls.length>1?'es':'')+' today', 'showTeacherClasses(\''+tid+'\')');
+      html += fbItem(initials(cls[0].teacherName||''),'',cls[0].teacherName||'?',
+        cls.length+' class'+(cls.length>1?'es':''),'showTeacher(\''+tid+'\')');
     });
   } else if (fallbackTab === 'room') {
     var map = scheduleData.roomSchedule || {};
     Object.keys(map).sort(function(a,b){
       return ((map[a][0]||{}).roomName||'').localeCompare((map[b][0]||{}).roomName||'');
-    }).forEach(function(rid) {
+    }).forEach(function(rid){
       var cls=map[rid]; if(!cls||!cls.length) return;
       var rn=cls[0].roomName||'Room '+rid;
-      html += fi(rn.replace('Room ','Rm '),'room',rn,
-        cls.length+' class'+(cls.length>1?'es':''), 'showRoomClasses(\''+rid+'\')');
+      html += fbItem(rn.replace('Room ','Rm '),'room',rn,cls.length+' class'+(cls.length>1?'es':''),'showRoom(\''+rid+'\')');
     });
   } else {
-    var blockMap={};
-    var rs=scheduleData.roomSchedule||{};
+    var bm={}, rs=scheduleData.roomSchedule||{};
     Object.keys(rs).forEach(function(rid){
-      rs[rid].forEach(function(cls){
-        var bk=cls.period||'No Period';
-        if(!blockMap[bk]) blockMap[bk]={classes:[],startTime:cls.startTime,endTime:cls.endTime,abbr:cls.periodAbbr||bk};
-        blockMap[bk].classes.push(cls);
+      rs[rid].forEach(function(c){
+        var bk=c.period||'No Period';
+        if(!bm[bk]) bm[bk]={classes:[],st:c.startTime,et:c.endTime,abbr:c.periodAbbr||bk};
+        bm[bk].classes.push(c);
       });
     });
-    Object.keys(blockMap).sort(function(a,b){
-      // Sort by start time converted to minutes for correct ordering
-      function toMins(t) {
-        if (!t) return 999;
-        var m = t.match(/(\d+):(\d+)\s*(AM|PM)/i);
-        if (!m) return 999;
-        var h = parseInt(m[1]), min = parseInt(m[2]), pm = m[3].toUpperCase()==='PM';
-        if (pm && h!==12) h+=12;
-        if (!pm && h===12) h=0;
-        return h*60+min;
-      }
-      return toMins(blockMap[a].startTime) - toMins(blockMap[b].startTime);
-    }).forEach(function(bk){
-      var bd=blockMap[bk];
-      var time=bd.startTime?bd.startTime+'–'+bd.endTime:'';
-      var detail=[time,bd.classes.length+' class'+(bd.classes.length>1?'es':'')].filter(Boolean).join(' · ');
-      html += fi(bd.abbr,'block',bk,detail,'showBlockClasses(\''+encodeURIComponent(bk)+'\')');
+    Object.keys(bm).sort(function(a,b){ return toMins(bm[a].st)-toMins(bm[b].st); })
+    .forEach(function(bk){
+      var bd=bm[bk];
+      var detail=(bd.st?bd.st+'–'+bd.et+' · ':'')+bd.classes.length+' class'+(bd.classes.length>1?'es':'');
+      html += fbItem(bd.abbr,'period',bk,detail,'showPeriod(\''+encodeURIComponent(bk)+'\')');
     });
   }
-  if (!html) html='<div style="padding:40px;text-align:center;color:#aaa">No classes loaded</div>';
-  document.getElementById('fallback-list').innerHTML = html;
+  if (!html) html='<div style="padding:32px;text-align:center;color:#aaa">No classes loaded</div>';
+  document.getElementById('fb-list').innerHTML = html;
 }
 
-function fi(icon,iconClass,name,detail,onclick) {
-  return '<div class="fallback-item" onclick="'+onclick+'">' +
-    '<div class="fi-icon '+iconClass+'">'+icon+'</div>' +
-    '<div class="fi-main"><div class="fi-name">'+name+'</div>' +
-    '<div class="fi-detail">'+detail+'</div></div>' +
-    '<div class="fi-arrow">›</div></div>';
+function fbItem(icon,iconClass,name,detail,onclick) {
+  return '<div class="fb-item" onclick="'+onclick+'">' +
+    '<div class="fb-icon '+iconClass+'">'+icon+'</div>' +
+    '<div class="fb-main"><div class="fb-name">'+name+'</div><div class="fb-detail">'+detail+'</div></div>' +
+    '<div class="fb-arrow">›</div></div>';
 }
 
-function toMins(t) {
-  if (!t) return 999;
-  var m = t.match(/(\d+):(\d+)\s*(AM|PM)/i);
-  if (!m) return 999;
-  var h = parseInt(m[1]), min = parseInt(m[2]), pm = m[3].toUpperCase()==='PM';
-  if (pm && h!==12) h+=12; if (!pm && h===12) h=0;
-  return h*60+min;
-}
-
-function showTeacherClasses(tid) {
+function showTeacher(tid) {
   var cls=((scheduleData||{}).teacherSchedule||{})[tid]||[];
-  cls.sort(function(a,b){return toMins(a.startTime)-toMins(b.startTime);});
+  cls=cls.slice().sort(function(a,b){return toMins(a.startTime)-toMins(b.startTime);});
   var html=backRow(cls.length?cls[0].teacherName:'','teacher');
-  cls.forEach(function(c){html+=classRow(c);}); 
-  document.getElementById('fallback-list').innerHTML=html;
+  cls.forEach(function(c){html+=classRow(c);});
+  document.getElementById('fb-list').innerHTML=html;
 }
 
-function showRoomClasses(rid) {
+function showRoom(rid) {
   var cls=((scheduleData||{}).roomSchedule||{})[rid]||[];
-  cls.sort(function(a,b){return toMins(a.startTime)-toMins(b.startTime);});
+  cls=cls.slice().sort(function(a,b){return toMins(a.startTime)-toMins(b.startTime);});
   var html=backRow(cls.length?(cls[0].roomName||'Room '+rid):'','room');
   cls.forEach(function(c){html+=classRow(c);});
-  document.getElementById('fallback-list').innerHTML=html;
+  document.getElementById('fb-list').innerHTML=html;
 }
 
-function showBlockClasses(enc) {
-  var bk=decodeURIComponent(enc);
-  var rs=((scheduleData||{}).roomSchedule)||{};
-  var cls=[];
+function showPeriod(enc) {
+  var bk=decodeURIComponent(enc), rs=((scheduleData||{}).roomSchedule)||{}, cls=[];
   Object.keys(rs).forEach(function(rid){
     rs[rid].forEach(function(c){if((c.period||'No Period')===bk)cls.push(c);});
   });
   cls.sort(function(a,b){return (a.roomName||'').localeCompare(b.roomName||'');});
   var html=backRow(bk,'block');
   cls.forEach(function(c){html+=classRow(c);});
-  document.getElementById('fallback-list').innerHTML=html;
+  document.getElementById('fb-list').innerHTML=html;
 }
 
 function classRow(cls) {
-  var meta=[cls.teacherName,cls.period,
-    cls.startTime?cls.startTime+'–'+cls.endTime:''].filter(Boolean).join(' · ');
-  return '<div class="fallback-item" onclick="loadClassBySection(\''+cls.sectionId+'\')">'+
-    '<div class="fi-icon block" style="border-radius:10px">'+(cls.periodAbbr||cls.period||'—')+'</div>'+
-    '<div class="fi-main"><div class="fi-name">'+(cls.sectionName||'')+'</div>'+
-    '<div class="fi-detail">'+meta+'</div></div>'+
-    '<div class="fi-arrow">›</div></div>';
+  var meta=[cls.teacherName,cls.period,cls.startTime?cls.startTime+'–'+cls.endTime:''].filter(Boolean).join(' · ');
+  return '<div class="fb-item" onclick="loadBySection(\''+cls.sectionId+'\')">'+
+    '<div class="fb-icon period">'+(cls.periodAbbr||cls.period||'—')+'</div>'+
+    '<div class="fb-main"><div class="fb-name">'+(cls.sectionName||'')+'</div><div class="fb-detail">'+meta+'</div></div>'+
+    '<div class="fb-arrow">›</div></div>';
 }
 
-function loadClassBySection(sectionId) {
-  var cls=null;
-  var rs=((scheduleData||{}).roomSchedule)||{};
-  Object.keys(rs).forEach(function(rid){
-    rs[rid].forEach(function(c){if(c.sectionId===sectionId)cls=c;});
-  });
-  if(!cls){showToast('Class not found');return;}
+function loadBySection(sectionId) {
+  var cls=null, rs=((scheduleData||{}).roomSchedule)||{};
+  Object.keys(rs).forEach(function(rid){ rs[rid].forEach(function(c){ if(c.sectionId===sectionId) cls=c; }); });
+  if (!cls) { showToast('Class not found'); return; }
   go('s-detecting');
-  document.getElementById('det-room').textContent=cls.roomName||'';
   document.getElementById('det-sub').textContent='Loading roster…';
   gasGet('getClassBySection',{sectionId:sectionId})
     .then(function(r){
       if(r.error){showToast(r.error);go('s-fallback');return;}
-      cls.students=r.students;
-      openAttendance(cls);
+      cls.students=r.students; openAttendance(cls);
     })
     .catch(function(){showToast('Could not load roster');go('s-fallback');});
 }
 
 function backRow(name,tab) {
-  return '<div style="padding:14px 24px;display:flex;align-items:center;gap:12px;border-bottom:1px solid #f0f0f0">'+
-    '<button style="background:none;border:none;cursor:pointer;font-size:22px;color:#888;padding:0" onclick="switchTab(\''+tab+'\')">←</button>'+
-    '<span style="font-size:16px;font-weight:500">'+name+'</span></div>';
+  return '<div class="fb-back-row">'+
+    '<button style="background:none;border:none;font-size:22px;color:#888;cursor:pointer" onclick="switchTab(\''+tab+'\')">←</button>'+
+    '<span style="font-size:15px;font-weight:500">'+name+'</span></div>';
 }
 
 // ── UTILS ─────────────────────────────────────────────────────
-function initials(name) {
-  return (name||'').split(' ').map(function(w){return w[0];})
-    .filter(function(c){return c&&/[A-Za-z]/.test(c);})
-    .join('').slice(0,2).toUpperCase()||'?';
+function initials(n) {
+  return (n||'').split(' ').map(function(w){return w[0];}).filter(function(c){return c&&/[A-Za-z]/.test(c);}).join('').slice(0,2).toUpperCase()||'?';
 }
-
 function showToast(msg) {
   var t=document.getElementById('toast');
   t.textContent=msg; t.classList.add('show');
   setTimeout(function(){t.classList.remove('show');},3500);
 }
-
 function tick() {
   var now=new Date(),h=now.getHours(),m=now.getMinutes();
   var el=document.getElementById('clock');
-  if(el) el.textContent=(h%12||12)+':'+(m<10?'0':'')+m+(h<12?' AM':' PM')+' · '+
-    now.toLocaleDateString('en-US',{weekday:'long',month:'short',day:'numeric'});
+  if(el) el.textContent=(h%12||12)+':'+(m<10?'0':'')+m+(h<12?' AM':' PM')+' · '+now.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});
 }
-tick();
-setInterval(tick,30000);
+tick(); setInterval(tick,30000);
 </script>
 </body>
 </html>
