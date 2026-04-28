@@ -218,7 +218,7 @@
 <script src="https://unpkg.com/jsqr@1.4.0/dist/jsQR.js"></script>
 <script>
 // ── CONFIG ────────────────────────────────────────────────────
-var GAS_URL = 'https://script.google.com/macros/s/AKfycbwdC5u7JDUTWQ5JcBqcwF9Y7DJ6yDZEq89HFF3OYcunXlw1MCsOI8dEbRMHc0ZTs7ulrQ/exec';
+var GAS_URL = 'https://script.google.com/macros/s/AKfycbzCovXcc1wPLjGeqhp4GDWdB_WuOYD5P9Z5JGgKtP8Rmq3PwuWvcqHIV0g9m5mMniOvDg/exec';
 
 // ── STATE ─────────────────────────────────────────────────────
 var attState    = {};
@@ -229,49 +229,31 @@ var videoStream = null;
 var scanInterval= null;
 var facingMode  = 'environment';
 
-// ── API — JSONP with CORS proxy fallback ─────────────────────
+// ── API — fetch via CORS proxy ────────────────────────────────
+// GAS /exec redirects before serving, breaking both fetch() and JSONP.
+// corsproxy.io forwards the request and adds CORS headers.
 var jsonpCounter = 0;
 
-function jsonp(url) {
-  return new Promise(function(resolve, reject) {
-    var cbName = '__gasCallback' + (++jsonpCounter);
-    var script  = document.createElement('script');
-    var timer   = setTimeout(function() {
-      cleanup();
-      reject(new Error('Request timed out after 30s'));
-    }, 30000);
-
-    function cleanup() {
-      clearTimeout(timer);
-      delete window[cbName];
-      if (script.parentNode) script.parentNode.removeChild(script);
-    }
-
-    window[cbName] = function(data) { cleanup(); resolve(data); };
-
-    script.onerror = function() {
-      cleanup();
-      // Fallback: try via corsproxy.io
-      var proxyUrl = 'https://corsproxy.io/?' + encodeURIComponent(url + '&callback=' + cbName);
-      var script2  = document.createElement('script');
-      var cbName2  = cbName + '_retry';
-      window[cbName2] = function(data) {
-        delete window[cbName2];
-        if (script2.parentNode) script2.parentNode.removeChild(script2);
-        resolve(data);
-      };
-      script2.onerror = function() {
-        delete window[cbName2];
-        if (script2.parentNode) script2.parentNode.removeChild(script2);
-        reject(new Error('Network error — check GAS deployment URL'));
-      };
-      script2.src = 'https://corsproxy.io/?' + encodeURIComponent(url + '&callback=' + cbName2);
-      document.head.appendChild(script2);
-    };
-
-    script.src = url + '&callback=' + cbName;
-    document.head.appendChild(script);
+function gasGet(action, params) {
+  var url = GAS_URL + '?action=' + encodeURIComponent(action);
+  if (params) Object.keys(params).forEach(function(k) {
+    url += '&' + encodeURIComponent(k) + '=' + encodeURIComponent(params[k]);
   });
+  var proxied = 'https://corsproxy.io/?' + encodeURIComponent(url);
+  return fetch(proxied).then(function(r) { return r.json(); });
+}
+
+function gasPost(action, payload) {
+  var url     = GAS_URL + '?action=' + encodeURIComponent(action) +
+                '&payload=' + encodeURIComponent(JSON.stringify(payload));
+  var proxied = 'https://corsproxy.io/?' + encodeURIComponent(url);
+  return fetch(proxied).then(function(r) { return r.json(); });
+}
+
+function jsonp(url) {
+  // Keep for compatibility but route through proxy
+  var proxied = 'https://corsproxy.io/?' + encodeURIComponent(url);
+  return fetch(proxied).then(function(r) { return r.json(); });
 }
 
 function gasGet(action, params) {
