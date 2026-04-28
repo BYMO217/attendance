@@ -51,8 +51,8 @@
     .detecting-room{font-size:22px;font-weight:500}
     .detecting-sub{font-size:15px;color:#888}
 
-    /* ATTENDANCE — uses position:absolute to guarantee footer is always visible */
-    .s-attendance{flex-direction:column;position:relative}
+    /* ATTENDANCE */
+    .s-attendance{flex-direction:column;overflow:hidden}
     .att-header{padding:14px 20px 12px;border-bottom:1px solid #f0f0f0;flex-shrink:0}
     .att-class{font-size:18px;font-weight:500}
     .att-meta{font-size:13px;color:#888;margin-top:3px}
@@ -67,6 +67,7 @@
     .tally-val{font-size:20px;font-weight:500}
     .tally-lbl{font-size:11px;color:#888;margin-top:2px}
     .tv-g{color:#1D9E75}.tv-r{color:#E24B4A}.tv-a{color:#BA7517}
+    /* Student list fills all space between tally and footer */
     .student-list{overflow-y:auto;flex:1;min-height:0;-webkit-overflow-scrolling:touch}
     .student-row{display:flex;align-items:center;padding:10px 16px;border-bottom:1px solid #f0f0f0;gap:12px}
     .avatar{width:36px;height:36px;border-radius:50%;background:#E6F1FB;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:500;color:#185FA5;flex-shrink:0}
@@ -77,11 +78,12 @@
     .sbtn-present.on{background:#C0DD97;color:#27500A;border-color:#639922}
     .sbtn-tardy.on{background:#FAC775;color:#633806;border-color:#BA7517}
     .sbtn-absent.on{background:#F7C1C1;color:#791F1F;border-color:#E24B4A}
-    .att-footer{display:none}
-    .submit-btn{flex:1;padding:14px;border-radius:12px;background:#185FA5;color:#fff;border:none;font-size:15px;font-weight:600;cursor:pointer}
+    /* Footer always visible at bottom — never scrolls away */
+    .att-footer{padding:12px 16px;border-top:2px solid #eee;display:flex;gap:10px;align-items:center;flex-shrink:0;background:#fff}
+    .submit-btn{flex:1;padding:16px;border-radius:12px;background:#185FA5;color:#fff;border:none;font-size:16px;font-weight:600;cursor:pointer;-webkit-appearance:none}
     .submit-btn:active{background:#0C447C}
     .submit-btn:disabled{background:#b0c4de;cursor:default}
-    .progress-lbl{font-size:12px;color:#888;white-space:nowrap}
+    .progress-lbl{font-size:12px;color:#888;white-space:nowrap;flex-shrink:0}
     .error-banner{background:#FCEBEB;color:#A32D2D;padding:8px 16px;font-size:12px;border-bottom:1px solid #F7C1C1;display:none;flex-shrink:0}
     .error-banner.show{display:block}
 
@@ -182,7 +184,11 @@
       <div class="tally-item"><div class="tally-val tv-r" id="t-absent">0</div><div class="tally-lbl">Absent</div></div>
     </div>
     <div class="student-list" id="student-list"></div>
-  </div><!-- end s-attendance -->
+    <div class="att-footer">
+      <span class="progress-lbl" id="prog-lbl"></span>
+      <button class="submit-btn" id="submit-btn" onclick="submitAttendance()">Submit attendance</button>
+    </div>
+  </div>
 
   <!-- FALLBACK PICKER -->
   <div id="s-fallback" class="screen s-fallback">
@@ -397,11 +403,10 @@ function openAttendance(cls) {
 function renderStudents(students) {
   if (!students || !students.length) {
     document.getElementById('student-list').innerHTML =
-      '<div style="padding:40px;text-align:center;color:#aaa">No students found</div>' +
-      submitFooterHTML();
+      '<div style="padding:40px;text-align:center;color:#aaa">No students found</div>';
     updateProgress(); return;
   }
-  var rows = students.map(function(s) {
+  document.getElementById('student-list').innerHTML = students.map(function(s) {
     return '<div class="student-row" id="row-' + s.id + '">' +
       '<div class="avatar">' + initials(s.name) + '</div>' +
       '<div class="student-name">' + s.name + '</div>' +
@@ -411,15 +416,7 @@ function renderStudents(students) {
         '<button class="sbtn sbtn-absent"     onclick="setStatus(\'' + s.id + '\',\'absent\')">A</button>' +
       '</div></div>';
   }).join('');
-  document.getElementById('student-list').innerHTML = rows + submitFooterHTML();
   updateProgress();
-}
-
-function submitFooterHTML() {
-  return '<div style="padding:16px 16px 32px">' +
-    '<div id="prog-lbl" style="font-size:12px;color:#888;text-align:center;margin-bottom:10px"></div>' +
-    '<button id="submit-btn" class="submit-btn" onclick="submitAttendance()">Submit attendance</button>' +
-  '</div>';
 }
 
 function setStatus(id, status) {
@@ -448,7 +445,7 @@ function updateProgress() {
   var marked = Object.values(attState).filter(Boolean).length;
   var lbl = document.getElementById('prog-lbl');
   var btn = document.getElementById('submit-btn');
-  if (lbl) lbl.textContent = marked + ' / ' + total + ' marked';
+  if (lbl) lbl.textContent = marked + ' / ' + total;
   if (btn) btn.disabled = marked < total;
 }
 
