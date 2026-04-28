@@ -229,9 +229,7 @@ var videoStream = null;
 var scanInterval= null;
 var facingMode  = 'environment';
 
-// ── API — JSONP to bypass CORS ────────────────────────────────
-// GAS doesn't send Access-Control-Allow-Origin headers so fetch() is blocked.
-// JSONP injects a <script> tag instead — no CORS restrictions apply.
+// ── API — JSONP with CORS proxy fallback ─────────────────────
 var jsonpCounter = 0;
 
 function jsonp(url) {
@@ -250,8 +248,28 @@ function jsonp(url) {
     }
 
     window[cbName] = function(data) { cleanup(); resolve(data); };
-    script.onerror  = function()    { cleanup(); reject(new Error('Network error')); };
-    script.src      = url + '&callback=' + cbName;
+
+    script.onerror = function() {
+      cleanup();
+      // Fallback: try via corsproxy.io
+      var proxyUrl = 'https://corsproxy.io/?' + encodeURIComponent(url + '&callback=' + cbName);
+      var script2  = document.createElement('script');
+      var cbName2  = cbName + '_retry';
+      window[cbName2] = function(data) {
+        delete window[cbName2];
+        if (script2.parentNode) script2.parentNode.removeChild(script2);
+        resolve(data);
+      };
+      script2.onerror = function() {
+        delete window[cbName2];
+        if (script2.parentNode) script2.parentNode.removeChild(script2);
+        reject(new Error('Network error — check GAS deployment URL'));
+      };
+      script2.src = 'https://corsproxy.io/?' + encodeURIComponent(url + '&callback=' + cbName2);
+      document.head.appendChild(script2);
+    };
+
+    script.src = url + '&callback=' + cbName;
     document.head.appendChild(script);
   });
 }
