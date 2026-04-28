@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
   <title>BYMO Attendance</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%23185FA5'/><text y='.9em' font-size='80' x='10'>📋</text></svg>">
   <style>
     *{box-sizing:border-box;margin:0;padding:0}
     html,body{height:100%;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#fff;color:#1a1a1a;-webkit-tap-highlight-color:transparent;overflow:hidden}
@@ -309,7 +310,7 @@ function openCamera() {
     video.play();
 
     var canvas  = document.createElement('canvas');
-    var ctx     = canvas.getContext('2d');
+    var ctx     = canvas.getContext('2d', { willReadFrequently: true });
 
     scanInterval = setInterval(function() {
       if (video.readyState !== video.HAVE_ENOUGH_DATA) return;
