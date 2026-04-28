@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <title>BYMO Attendance</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    html,body{height:100%;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#fff;color:#1a1a1a;-webkit-tap-highlight-color:transparent;overflow:hidden}
+    #app{position:relative;height:100vh;overflow:hidden;background:#fff}
+    .screen{display:none;flex-direction:column;height:100vh;background:#fff;overflow:hidden}
+    .screen.active{display:flex}
+
+    /* HOME */
+    .s-home{align-items:center;justify-content:center;gap:36px}
+    .school-name{font-size:13px;color:#888;letter-spacing:.08em;text-transform:uppercase}
+    .scan-btn{width:220px;height:220px;border-radius:50%;background:#185FA5;border:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;-webkit-tap-highlight-color:transparent}
+    .scan-btn:active{background:#0C447C;transform:scale(0.97)}
+    .scan-btn-label{font-size:20px;font-weight:500;color:#fff}
+    .scan-btn-sub{font-size:13px;color:#B5D4F4}
+    .time-display{font-size:13px;color:#888}
+
+    /* DETECTING */
+    .s-detecting{align-items:center;justify-content:center;gap:18px}
+    .spinner{width:44px;height:44px;border:3px solid #eee;border-top-color:#185FA5;border-radius:50%;animation:spin .7s linear infinite}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    .detecting-room{font-size:22px;font-weight:500}
+    .detecting-sub{font-size:15px;color:#888}
+
+    /* ATTENDANCE */
+    .s-attendance{flex-direction:column}
+    .att-header{padding:18px 24px 14px;border-bottom:1px solid #f0f0f0;flex-shrink:0}
+    .att-class{font-size:22px;font-weight:500}
+    .att-meta{font-size:14px;color:#888;margin-top:4px}
+    .att-pills{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap;align-items:center}
+    .pill{display:inline-block;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:500}
+    .pill-blue{background:#E6F1FB;color:#0C447C}
+    .pill-gray{background:#f2f2f0;color:#555}
+    .not-your-class{background:none;border:none;font-size:12px;color:#185FA5;cursor:pointer;padding:0;margin-left:auto;font-weight:500}
+    .tally-bar{display:flex;border-bottom:1px solid #f0f0f0;flex-shrink:0}
+    .tally-item{flex:1;padding:12px 0;text-align:center;border-right:1px solid #f0f0f0}
+    .tally-item:last-child{border-right:none}
+    .tally-val{font-size:22px;font-weight:500}
+    .tally-lbl{font-size:11px;color:#888;margin-top:2px}
+    .tv-g{color:#1D9E75}.tv-r{color:#E24B4A}.tv-a{color:#BA7517}
+    .student-list{overflow-y:auto;flex:1;-webkit-overflow-scrolling:touch}
+    .student-row{display:flex;align-items:center;padding:11px 24px;border-bottom:1px solid #f0f0f0;gap:14px}
+    .avatar{width:38px;height:38px;border-radius:50%;background:#E6F1FB;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:500;color:#185FA5;flex-shrink:0}
+    .student-name{font-size:15px;font-weight:500;flex:1}
+    .status-btns{display:flex;gap:6px}
+    .sbtn{padding:8px 16px;border-radius:7px;font-size:13px;font-weight:500;cursor:pointer;border:2px solid #ddd;background:#f5f5f5;color:#bbb;transition:all .1s}
+    .sbtn:active{transform:scale(0.96)}
+    .sbtn-present.on{background:#C0DD97;color:#27500A;border-color:#639922}
+    .sbtn-tardy.on{background:#FAC775;color:#633806;border-color:#BA7517}
+    .sbtn-absent.on{background:#F7C1C1;color:#791F1F;border-color:#E24B4A}
+    .att-footer{padding:14px 24px;border-top:1px solid #f0f0f0;display:flex;gap:14px;align-items:center;flex-shrink:0}
+    .submit-btn{flex:1;padding:16px;border-radius:12px;background:#185FA5;color:#fff;border:none;font-size:16px;font-weight:500;cursor:pointer}
+    .submit-btn:active{background:#0C447C}
+    .submit-btn:disabled{background:#b0c4de;cursor:default}
+    .progress-lbl{font-size:13px;color:#888;white-space:nowrap}
+    .error-banner{background:#FCEBEB;color:#A32D2D;padding:10px 24px;font-size:13px;border-bottom:1px solid #F7C1C1;display:none;flex-shrink:0}
+    .error-banner.show{display:block}
+
+    /* FALLBACK */
+    .s-fallback{flex-direction:column}
+    .fallback-header{padding:22px 24px 18px;border-bottom:1px solid #f0f0f0;display:flex;align-items:center;gap:18px;flex-shrink:0}
+    .back-link{background:none;border:none;cursor:pointer;color:#888;font-size:26px;padding:0;line-height:1;flex-shrink:0}
+    .fallback-title{font-size:18px;font-weight:500}
+    .seg-wrap{padding:18px 24px 0;flex-shrink:0}
+    .seg{display:grid;grid-template-columns:1fr 1fr 1fr;border:2px solid #185FA5;border-radius:10px;overflow:hidden}
+    .seg-btn{padding:12px 0;font-size:14px;font-weight:500;text-align:center;cursor:pointer;border:none;transition:background .15s,color .15s}
+    .seg-btn:not(:last-child){border-right:2px solid #185FA5}
+    .seg-btn.inactive{background:#fff;color:#185FA5}
+    .seg-btn.selected{background:#185FA5;color:#fff}
+    .fallback-list{padding:8px 0;overflow-y:auto;flex:1;-webkit-overflow-scrolling:touch}
+    .fallback-item{display:flex;align-items:center;padding:15px 24px;gap:16px;cursor:pointer;border-bottom:1px solid #f0f0f0}
+    .fallback-item:active{background:#f9f9f9}
+    .fi-icon{width:42px;height:42px;border-radius:50%;background:#E6F1FB;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:500;color:#185FA5;flex-shrink:0}
+    .fi-icon.room{background:#f2f2f0;color:#666;border-radius:10px;font-size:11px}
+    .fi-icon.block{background:#FFF3E0;color:#E65100;border-radius:10px;font-size:11px}
+    .fi-main{flex:1;min-width:0}
+    .fi-name{font-size:16px;font-weight:500}
+    .fi-detail{font-size:12px;color:#888;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .fi-arrow{color:#ccc;font-size:20px;flex-shrink:0}
+    .fallback-back-row{padding:14px 24px;display:flex;align-items:center;gap:12px;border-bottom:1px solid #f0f0f0}
+    .fallback-back-btn{background:none;border:none;cursor:pointer;font-size:22px;color:#888;padding:0;line-height:1}
+
+    /* SUCCESS */
+    .s-success{align-items:center;justify-content:center;gap:22px}
+    .success-icon{width:90px;height:90px;border-radius:50%;background:#E1F5EE;display:flex;align-items:center;justify-content:center}
+    .success-title{font-size:24px;font-weight:500}
+    .success-sub{font-size:15px;color:#888;text-align:center;max-width:300px;line-height:1.6}
+    .done-btn{padding:14px 48px;border-radius:12px;background:#185FA5;color:#fff;border:none;font-size:16px;font-weight:500;cursor:pointer;margin-top:10px}
+
+    /* TOAST */
+    .toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%);background:#222;color:#fff;padding:12px 22px;border-radius:10px;font-size:14px;opacity:0;transition:opacity .25s;pointer-events:none;z-index:99;white-space:nowrap;max-width:90vw;text-align:center}
+    .toast.show{opacity:1}
+  </style>
+</head>
+<body>
+<div id="app">
+
+  <!-- HOME -->
+  <div id="s-home" class="screen s-home active">
+    <div class="school-name">BYMO Attendance</div>
+    <label class="scan-btn" for="qr-file-input">
+      <svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="3" width="5" height="5" rx="1"/><rect x="16" y="3" width="5" height="5" rx="1"/>
+        <rect x="3" y="16" width="5" height="5" rx="1"/>
+        <rect x="13" y="13" width="2" height="2"/><rect x="17" y="13" width="2" height="2"/>
+        <rect x="13" y="17" width="2" height="2"/><rect x="17" y="17" width="2" height="2"/>
+      </svg>
+      <span class="scan-btn-label">Scan room QR</span>
+      <span class="scan-btn-sub">Tap to open camera</span>
+    </label>
+    <input type="file" id="qr-file-input" accept="image/*" capture="environment"
+           style="display:none" onchange="handleQRFile(this)">
+    <div class="time-display" id="clock"></div>
+  </div>
+
+  <!-- DETECTING -->
+  <div id="s-detecting" class="screen s-detecting">
+    <div class="spinner"></div>
+    <div class="detecting-room" id="det-room"></div>
+    <div class="detecting-sub"  id="det-sub">Looking up current period…</div>
+  </div>
+
+  <!-- ATTENDANCE -->
+  <div id="s-attendance" class="screen s-attendance">
+    <div class="att-header">
+      <div class="att-class" id="att-class"></div>
+      <div class="att-meta"  id="att-meta"></div>
+      <div class="att-pills" id="att-pills"></div>
+    </div>
+    <div id="att-error" class="error-banner"></div>
+    <div class="tally-bar">
+      <div class="tally-item"><div class="tally-val tv-g" id="t-present">0</div><div class="tally-lbl">Present</div></div>
+      <div class="tally-item"><div class="tally-val tv-a" id="t-tardy">0</div><div class="tally-lbl">Tardy</div></div>
+      <div class="tally-item"><div class="tally-val tv-r" id="t-absent">0</div><div class="tally-lbl">Absent</div></div>
+    </div>
+    <div class="student-list" id="student-list"></div>
+    <div class="att-footer">
+      <span class="progress-lbl" id="prog-lbl"></span>
+      <button class="submit-btn" id="submit-btn" onclick="submitAttendance()">Submit attendance</button>
+    </div>
+  </div>
+
+  <!-- FALLBACK PICKER -->
+  <div id="s-fallback" class="screen s-fallback">
+    <div class="fallback-header">
+      <button class="back-link" onclick="go('s-home')">←</button>
+      <div class="fallback-title">Select a class</div>
+    </div>
+    <div class="seg-wrap">
+      <div class="seg">
+        <button class="seg-btn selected" id="seg-teacher" onclick="switchTab('teacher')">Teacher</button>
+        <button class="seg-btn inactive"  id="seg-room"    onclick="switchTab('room')">Room</button>
+        <button class="seg-btn inactive"  id="seg-block"   onclick="switchTab('block')">Block</button>
+      </div>
+    </div>
+    <div class="fallback-list" id="fallback-list"></div>
+  </div>
+
+  <!-- SUCCESS -->
+  <div id="s-success" class="screen s-success">
+    <div class="success-icon">
+      <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#1D9E75" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="20 6 9 17 4 12"/>
+      </svg>
+    </div>
+    <div class="success-title">Attendance submitted</div>
+    <div class="success-sub" id="success-sub"></div>
+    <button class="done-btn" onclick="go('s-home')">Done</button>
+  </div>
+
+</div>
+<div class="toast" id="toast"></div>
+
+<script src="https://unpkg.com/jsqr@1.4.0/dist/jsQR.js"></script>
+<script>
+// ── CONFIG — UPDATE THIS ──────────────────────────────────────
+// Your Google Apps Script deployment URL
+var GAS_URL = 'https://script.google.com/macros/s/AKfycbwdC5u7JDUTWQ5JcBqcwF9Y7DJ6yDZEq89HFF3OYcunXlw1MCsOI8dEbRMHc0ZTs7ulrQ/exec';
+
+// ── STATE ─────────────────────────────────────────────────────
+var attState     = {};
+var currentClass = null;
+var scheduleData = null;
+var fallbackTab  = 'teacher';
+
+// ── GAS API CALLS ─────────────────────────────────────────────
+function gasGet(action, params) {
+  var url = GAS_URL + '?action=' + action;
+  if (params) {
+    Object.keys(params).forEach(function(k) {
+      url += '&' + encodeURIComponent(k) + '=' + encodeURIComponent(params[k]);
+    });
+  }
+  return fetch(url).then(function(r) { return r.json(); });
+}
+
+function gasPost(action, payload) {
+  return fetch(GAS_URL, {
+    method:  'POST',
+    body:    JSON.stringify({ action: action, payload: payload }),
+  }).then(function(r) { return r.json(); });
+}
+
+// ── SCREEN ROUTING ────────────────────────────────────────────
+function go(id) {
+  document.querySelectorAll('#app .screen').forEach(function(s) { s.classList.remove('active'); });
+  document.getElementById(id).classList.add('active');
+}
+
+// ── PAGE LOAD ─────────────────────────────────────────────────
+window.addEventListener('load', function() {
+  tick();
+  // Check for ?room= in URL — direct link from QR code
+  var m = window.location.search.match(/[?&]room=([^&]+)/);
+  if (m) loadRoom(m[1]);
+});
+
+// ── QR FILE INPUT ─────────────────────────────────────────────
+function handleQRFile(input) {
+  if (!input.files || !input.files[0]) return;
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    var img    = new Image();
+    img.onload = function() {
+      var canvas = document.createElement('canvas');
+      canvas.width  = img.width;
+      canvas.height = img.height;
+      canvas.getContext('2d').drawImage(img, 0, 0);
+      var d    = canvas.getContext('2d').getImageData(0, 0, canvas.width, canvas.height);
+      var code = jsQR(d.data, d.width, d.height, { inversionAttempts: 'dontInvert' });
+      if (code && code.data) {
+        parseQR(code.data);
+      } else {
+        showToast('Could not read QR code — try again');
+      }
+      input.value = '';
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(input.files[0]);
+}
+
+function parseQR(data) {
+  var m = data.match(/[?&]room=([^&\s]+)/);
+  loadRoom(m ? m[1] : data.trim());
+}
+
+// ── ROOM LOOKUP ───────────────────────────────────────────────
+function loadRoom(roomId) {
+  if (!roomId) { showToast('Invalid QR code'); return; }
+  go('s-detecting');
+  document.getElementById('det-room').textContent = 'Room ' + roomId;
+  document.getElementById('det-sub').textContent  = 'Looking up current period…';
+
+  gasGet('getClassForRoom', { roomId: roomId })
+    .then(function(result) {
+      if (result.error)         { showToast(result.error); go('s-home'); return; }
+      if (result.noCurrentClass){ showToast(result.reason || 'No class right now'); loadFallback(); return; }
+      openAttendance(result);
+    })
+    .catch(function(err) { showToast('Error: ' + err.message); go('s-home'); });
+}
+
+// ── ATTENDANCE FORM ───────────────────────────────────────────
+function openAttendance(cls) {
+  currentClass = cls;
+  attState     = {};
+
+  document.getElementById('att-class').textContent = cls.className || cls.sectionName || '';
+  document.getElementById('att-meta').textContent  =
+    [cls.teacherName, cls.day, cls.period,
+     cls.startTime ? cls.startTime + '–' + cls.endTime : '']
+    .filter(Boolean).join(' · ');
+
+  var pills = '';
+  if (cls.roomName) pills += '<span class="pill pill-blue">' + cls.roomName + '</span>';
+  if (cls.period)   pills += '<span class="pill pill-gray">' + cls.period  + '</span>';
+  pills += '<button class="not-your-class" onclick="loadFallback()">Not your class?</button>';
+  document.getElementById('att-pills').innerHTML = pills;
+  document.getElementById('att-error').classList.remove('show');
+
+  var students = cls.students || [];
+  students.forEach(function(s) { attState[s.id] = 'present'; });
+  renderStudents(students);
+  updateTally();
+  go('s-attendance');
+}
+
+function renderStudents(students) {
+  var html = '';
+  if (!students || !students.length) {
+    html = '<div style="padding:40px;text-align:center;color:#aaa">No students found</div>';
+  } else {
+    students.forEach(function(s) {
+      html += '<div class="student-row" id="row-' + s.id + '">' +
+        '<div class="avatar">' + initials(s.name) + '</div>' +
+        '<div class="student-name">' + s.name + '</div>' +
+        '<div class="status-btns">' +
+          '<button class="sbtn sbtn-present on" onclick="setStatus(\'' + s.id + '\',\'present\')">P</button>' +
+          '<button class="sbtn sbtn-tardy"      onclick="setStatus(\'' + s.id + '\',\'tardy\')">T</button>' +
+          '<button class="sbtn sbtn-absent"     onclick="setStatus(\'' + s.id + '\',\'absent\')">A</button>' +
+        '</div></div>';
+    });
+  }
+  document.getElementById('student-list').innerHTML = html;
+  updateProgress();
+}
+
+function setStatus(id, status) {
+  attState[id] = status;
+  var row = document.getElementById('row-' + id);
+  if (!row) return;
+  row.querySelectorAll('.sbtn').forEach(function(b) { b.classList.remove('on'); });
+  var idx = { present: 0, tardy: 1, absent: 2 }[status];
+  if (row.querySelectorAll('.sbtn')[idx]) row.querySelectorAll('.sbtn')[idx].classList.add('on');
+  updateTally();
+  updateProgress();
+}
+
+function updateTally() {
+  var p = 0, t = 0, a = 0;
+  Object.values(attState).forEach(function(s) {
+    if (s === 'present') p++; else if (s === 'tardy') t++; else if (s === 'absent') a++;
+  });
+  document.getElementById('t-present').textContent = p;
+  document.getElementById('t-tardy').textContent   = t;
+  document.getElementById('t-absent').textContent  = a;
+}
+
+function updateProgress() {
+  var total  = Object.keys(attState).length;
+  var marked = Object.values(attState).filter(Boolean).length;
+  document.getElementById('prog-lbl').textContent   = marked + ' / ' + total;
+  document.getElementById('submit-btn').disabled    = marked < total;
+}
+
+function submitAttendance() {
+  if (!currentClass) return;
+  var btn = document.getElementById('submit-btn');
+  btn.disabled = true; btn.textContent = 'Submitting…';
+
+  var today   = new Date();
+  var dateStr = today.getFullYear() + '-' +
+    String(today.getMonth() + 1).padStart(2, '0') + '-' +
+    String(today.getDate()).padStart(2, '0');
+
+  var payload = {
+    sectionId:   currentClass.sectionId,
+    className:   currentClass.className || currentClass.sectionName || '',
+    teacherName: currentClass.teacherName || '',
+    roomName:    currentClass.roomName    || '',
+    period:      currentClass.period      || '',
+    date:        dateStr,
+    records:     Object.keys(attState).map(function(id) {
+      return { studentId: id, status: attState[id], note: '' };
+    }),
+  };
+
+  gasPost('submitAttendance', payload)
+    .then(function(result) {
+      btn.disabled = false; btn.textContent = 'Submit attendance';
+      if (result.success) {
+        document.getElementById('success-sub').textContent =
+          payload.records.length + ' students marked for ' + payload.className;
+        go('s-success');
+      } else {
+        var e = document.getElementById('att-error');
+        e.textContent = result.error || 'Submission failed';
+        e.classList.add('show');
+        showToast(result.queued ? 'Queued for retry' : 'Submission failed');
+      }
+    })
+    .catch(function(err) {
+      btn.disabled = false; btn.textContent = 'Submit attendance';
+      showToast('Error: ' + err.message);
+    });
+}
+
+// ── FALLBACK PICKER ───────────────────────────────────────────
+function loadFallback() {
+  if (scheduleData) { go('s-fallback'); renderFallbackList(); return; }
+  go('s-detecting');
+  document.getElementById('det-sub').textContent = 'Loading schedule…';
+  gasGet('getAllScheduleData')
+    .then(function(data) {
+      scheduleData = data;
+      go('s-fallback');
+      renderFallbackList();
+    })
+    .catch(function(err) { showToast('Could not load schedule: ' + err.message); go('s-home'); });
+}
+
+function switchTab(tab) {
+  fallbackTab = tab;
+  ['teacher','room','block'].forEach(function(t) {
+    document.getElementById('seg-' + t).className = 'seg-btn ' + (t === tab ? 'selected' : 'inactive');
+  });
+  renderFallbackList();
+}
+
+function renderFallbackList() {
+  if (!scheduleData) return;
+  var html = '';
+
+  if (fallbackTab === 'teacher') {
+    var map = scheduleData.teacherSchedule || {};
+    Object.keys(map).sort(function(a,b){
+      return ((map[a][0]||{}).teacherName||'').localeCompare((map[b][0]||{}).teacherName||'');
+    }).forEach(function(tid) {
+      var cls = map[tid]; if (!cls||!cls.length) return;
+      var name = cls[0].teacherName || 'Unknown';
+      html += item(initials(name), '', name, cls.length + ' class' + (cls.length>1?'es':'') + ' today',
+        'showTeacherClasses(\'' + tid + '\')');
+    });
+
+  } else if (fallbackTab === 'room') {
+    var map = scheduleData.roomSchedule || {};
+    Object.keys(map).sort(function(a,b){
+      return ((map[a][0]||{}).roomName||'').localeCompare((map[b][0]||{}).roomName||'');
+    }).forEach(function(rid) {
+      var cls = map[rid]; if (!cls||!cls.length) return;
+      var rn = cls[0].roomName || 'Room ' + rid;
+      html += item(rn.replace('Room ','Rm '), 'room', rn, cls.length + ' class' + (cls.length>1?'es':''),
+        'showRoomClasses(\'' + rid + '\')');
+    });
+
+  } else if (fallbackTab === 'block') {
+    // Build block map from roomSchedule
+    var blockMap = {};
+    var rs = scheduleData.roomSchedule || {};
+    Object.keys(rs).forEach(function(rid) {
+      rs[rid].forEach(function(cls) {
+        var bk = cls.period || 'No Period';
+        if (!blockMap[bk]) blockMap[bk] = { classes: [], startTime: cls.startTime, endTime: cls.endTime, abbr: cls.periodAbbr || bk };
+        blockMap[bk].classes.push(cls);
+      });
+    });
+    Object.keys(blockMap).sort(function(a,b){
+      return (blockMap[a].startTime||'').localeCompare(blockMap[b].startTime||'');
+    }).forEach(function(bk) {
+      var bd   = blockMap[bk];
+      var time = bd.startTime ? bd.startTime + '–' + bd.endTime : '';
+      var detail = [time, bd.classes.length + ' class' + (bd.classes.length>1?'es':'')].filter(Boolean).join(' · ');
+      html += item(bd.abbr, 'block', bk, detail, 'showBlockClasses(\'' + encodeURIComponent(bk) + '\')');
+    });
+  }
+
+  if (!html) html = '<div style="padding:40px;text-align:center;color:#aaa">No classes loaded</div>';
+  document.getElementById('fallback-list').innerHTML = html;
+}
+
+function item(icon, iconClass, name, detail, onclick) {
+  return '<div class="fallback-item" onclick="' + onclick + '">' +
+    '<div class="fi-icon ' + iconClass + '">' + icon + '</div>' +
+    '<div class="fi-main"><div class="fi-name">' + name + '</div>' +
+    '<div class="fi-detail">' + detail + '</div></div>' +
+    '<div class="fi-arrow">›</div></div>';
+}
+
+function showTeacherClasses(tid) {
+  var cls  = ((scheduleData||{}).teacherSchedule||{})[tid] || [];
+  var name = cls.length ? cls[0].teacherName : '';
+  var html = backRow(name, 'teacher');
+  cls.forEach(function(c) { html += classRow(c); });
+  document.getElementById('fallback-list').innerHTML = html;
+}
+
+function showRoomClasses(rid) {
+  var cls  = ((scheduleData||{}).roomSchedule||{})[rid] || [];
+  var name = cls.length ? (cls[0].roomName || 'Room ' + rid) : '';
+  var html = backRow(name, 'room');
+  cls.forEach(function(c) { html += classRow(c); });
+  document.getElementById('fallback-list').innerHTML = html;
+}
+
+function showBlockClasses(encodedBlock) {
+  var bk  = decodeURIComponent(encodedBlock);
+  var rs  = ((scheduleData||{}).roomSchedule)||{};
+  var cls = [];
+  Object.keys(rs).forEach(function(rid) {
+    rs[rid].forEach(function(c) { if ((c.period||'No Period') === bk) cls.push(c); });
+  });
+  cls.sort(function(a,b){ return (a.roomName||'').localeCompare(b.roomName||''); });
+  var html = backRow(bk, 'block');
+  cls.forEach(function(c) { html += classRow(c); });
+  document.getElementById('fallback-list').innerHTML = html;
+}
+
+function classRow(cls) {
+  var meta = [cls.teacherName, cls.period,
+    cls.startTime ? cls.startTime + '–' + cls.endTime : ''].filter(Boolean).join(' · ');
+  return '<div class="fallback-item" onclick="loadClassBySection(\'' + cls.sectionId + '\')">' +
+    '<div class="fi-icon block" style="border-radius:10px">' + (cls.periodAbbr || cls.period || '—') + '</div>' +
+    '<div class="fi-main"><div class="fi-name">' + (cls.sectionName||'') + '</div>' +
+    '<div class="fi-detail">' + meta + '</div></div>' +
+    '<div class="fi-arrow">›</div></div>';
+}
+
+function loadClassBySection(sectionId) {
+  var cls = null;
+  var rs  = ((scheduleData||{}).roomSchedule)||{};
+  Object.keys(rs).forEach(function(rid) {
+    rs[rid].forEach(function(c) { if (c.sectionId === sectionId) cls = c; });
+  });
+  if (!cls) { showToast('Class not found'); return; }
+  go('s-detecting');
+  document.getElementById('det-room').textContent = cls.roomName || '';
+  document.getElementById('det-sub').textContent  = 'Loading roster…';
+  gasGet('getClassBySection', { sectionId: sectionId })
+    .then(function(result) {
+      if (result.error) { showToast(result.error); go('s-fallback'); return; }
+      cls.students = result.students;
+      openAttendance(cls);
+    })
+    .catch(function() { showToast('Could not load roster'); go('s-fallback'); });
+}
+
+function backRow(name, tab) {
+  return '<div class="fallback-back-row" style="padding:14px 24px;display:flex;align-items:center;gap:12px;border-bottom:1px solid #f0f0f0">' +
+    '<button style="background:none;border:none;cursor:pointer;font-size:22px;color:#888;padding:0" onclick="switchTab(\'' + tab + '\')">←</button>' +
+    '<span style="font-size:16px;font-weight:500">' + name + '</span></div>';
+}
+
+// ── UTILITIES ─────────────────────────────────────────────────
+function initials(name) {
+  return (name||'').split(' ').map(function(w){return w[0];})
+    .filter(function(c){return c&&/[A-Za-z]/.test(c);})
+    .join('').slice(0,2).toUpperCase()||'?';
+}
+
+function showToast(msg) {
+  var t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(function(){ t.classList.remove('show'); }, 3500);
+}
+
+function tick() {
+  var now = new Date();
+  var h = now.getHours(), m = now.getMinutes();
+  var el = document.getElementById('clock');
+  if (el) el.textContent =
+    (h%12||12) + ':' + (m<10?'0':'') + m + (h<12?' AM':' PM') + ' · ' +
+    now.toLocaleDateString('en-US',{weekday:'long',month:'short',day:'numeric'});
+}
+tick();
+setInterval(tick, 30000);
+</script>
+</body>
+</html>
