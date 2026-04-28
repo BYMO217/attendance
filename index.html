@@ -12,13 +12,32 @@
     .screen.active{display:flex}
 
     /* HOME */
-    .s-home{align-items:center;justify-content:center;gap:36px}
+    .s-home{align-items:center;justify-content:center;gap:32px}
     .school-name{font-size:13px;color:#888;letter-spacing:.08em;text-transform:uppercase}
-    .scan-btn{width:220px;height:220px;border-radius:50%;background:#185FA5;border:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;-webkit-tap-highlight-color:transparent}
+    .scan-btn{width:220px;height:220px;border-radius:50%;background:#185FA5;border:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;-webkit-tap-highlight-color:transparent;transition:transform .1s}
     .scan-btn:active{background:#0C447C;transform:scale(0.97)}
     .scan-btn-label{font-size:20px;font-weight:500;color:#fff}
     .scan-btn-sub{font-size:13px;color:#B5D4F4}
+    .manual-btn{background:none;border:none;color:#aaa;font-size:13px;cursor:pointer;padding:4px 0}
     .time-display{font-size:13px;color:#888}
+
+    /* SCANNING */
+    .s-scanning{background:#000;align-items:center;justify-content:center;gap:20px}
+    .scanner-wrap{position:relative;width:300px;height:300px;border-radius:16px;overflow:hidden;background:#111}
+    #qr-video{width:100%;height:100%;object-fit:cover;display:block}
+    .scanner-overlay{position:absolute;inset:0;pointer-events:none}
+    /* Corner brackets */
+    .scanner-overlay::before,.scanner-overlay::after{content:'';position:absolute;width:40px;height:40px;border-color:#fff;border-style:solid}
+    .scanner-overlay::before{top:12px;left:12px;border-width:3px 0 0 3px;border-radius:4px 0 0 0}
+    .scanner-overlay::after{bottom:12px;right:12px;border-width:0 3px 3px 0;border-radius:0 0 4px 0}
+    .corner-tr{position:absolute;top:12px;right:12px;width:40px;height:40px;border-top:3px solid #fff;border-right:3px solid #fff;border-radius:0 4px 0 0}
+    .corner-bl{position:absolute;bottom:12px;left:12px;width:40px;height:40px;border-bottom:3px solid #fff;border-left:3px solid #fff;border-radius:0 0 0 4px}
+    .scan-line{position:absolute;left:12px;right:12px;height:2px;background:linear-gradient(90deg,transparent,#185FA5,transparent);animation:scanmove 2s ease-in-out infinite}
+    @keyframes scanmove{0%,100%{top:20px;opacity:1}50%{top:272px;opacity:1}}
+    .scanner-hint{color:#aaa;font-size:14px;text-align:center}
+    .scan-actions{display:flex;gap:12px}
+    .scan-cancel{color:#ccc;background:none;border:1px solid #444;padding:10px 24px;border-radius:10px;font-size:15px;cursor:pointer}
+    .scan-flip{color:#185FA5;background:none;border:1px solid #185FA5;padding:10px 18px;border-radius:10px;font-size:14px;cursor:pointer;display:flex;align-items:center;gap:6px}
 
     /* DETECTING */
     .s-detecting{align-items:center;justify-content:center;gap:18px}
@@ -82,8 +101,6 @@
     .fi-name{font-size:16px;font-weight:500}
     .fi-detail{font-size:12px;color:#888;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
     .fi-arrow{color:#ccc;font-size:20px;flex-shrink:0}
-    .fallback-back-row{padding:14px 24px;display:flex;align-items:center;gap:12px;border-bottom:1px solid #f0f0f0}
-    .fallback-back-btn{background:none;border:none;cursor:pointer;font-size:22px;color:#888;padding:0;line-height:1}
 
     /* SUCCESS */
     .s-success{align-items:center;justify-content:center;gap:22px}
@@ -103,7 +120,7 @@
   <!-- HOME -->
   <div id="s-home" class="screen s-home active">
     <div class="school-name">BYMO Attendance</div>
-    <label class="scan-btn" for="qr-file-input" id="scan-label">
+    <button class="scan-btn" onclick="startScan()">
       <svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
         <rect x="3" y="3" width="5" height="5" rx="1"/><rect x="16" y="3" width="5" height="5" rx="1"/>
         <rect x="3" y="16" width="5" height="5" rx="1"/>
@@ -112,13 +129,31 @@
       </svg>
       <span class="scan-btn-label">Scan room QR</span>
       <span class="scan-btn-sub">Tap to open camera</span>
-    </label>
-    <input type="file" id="qr-file-input" accept="image/*" capture="environment"
-           style="display:none" onchange="handleQRFile(this)">
-    <button onclick="loadFallback()" style="background:none;border:none;color:#aaa;font-size:13px;cursor:pointer;padding:4px 0">
-      Choose class manually
     </button>
+    <button class="manual-btn" onclick="loadFallback()">Choose class manually</button>
     <div class="time-display" id="clock"></div>
+  </div>
+
+  <!-- SCANNING — live camera with jsQR -->
+  <div id="s-scanning" class="screen s-scanning">
+    <div class="scanner-hint">Point at the room QR code</div>
+    <div class="scanner-wrap">
+      <video id="qr-video" autoplay playsinline muted></video>
+      <div class="scanner-overlay"></div>
+      <div class="corner-tr"></div>
+      <div class="corner-bl"></div>
+      <div class="scan-line"></div>
+    </div>
+    <div class="scan-actions">
+      <button class="scan-cancel" onclick="stopScan()">Cancel</button>
+      <button class="scan-flip"   onclick="flipCamera()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M1 4v6h6"/><path d="M23 20v-6h-6"/>
+          <path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4-4.64 4.36A9 9 0 0 1 3.51 15"/>
+        </svg>
+        Flip
+      </button>
+    </div>
   </div>
 
   <!-- DETECTING -->
@@ -181,112 +216,144 @@
 
 <script src="https://unpkg.com/jsqr@1.4.0/dist/jsQR.js"></script>
 <script>
-// ── CONFIG — UPDATE THIS ──────────────────────────────────────
-// Your Google Apps Script deployment URL
+// ── CONFIG ────────────────────────────────────────────────────
 var GAS_URL = 'https://script.google.com/macros/s/AKfycbwdC5u7JDUTWQ5JcBqcwF9Y7DJ6yDZEq89HFF3OYcunXlw1MCsOI8dEbRMHc0ZTs7ulrQ/exec';
 
 // ── STATE ─────────────────────────────────────────────────────
-var attState     = {};
-var currentClass = null;
-var scheduleData = null;
-var fallbackTab  = 'teacher';
+var attState    = {};
+var currentClass= null;
+var scheduleData= null;
+var fallbackTab = 'teacher';
+var videoStream = null;
+var scanInterval= null;
+var facingMode  = 'environment';
 
-// ── GAS API CALLS ─────────────────────────────────────────────
-// GAS doesn't support CORS preflight (OPTIONS), so we use GET for everything.
-// Attendance submission payload is JSON-encoded as a URL parameter.
+// ── API — JSONP to bypass CORS ────────────────────────────────
+// GAS doesn't send Access-Control-Allow-Origin headers so fetch() is blocked.
+// JSONP injects a <script> tag instead — no CORS restrictions apply.
+var jsonpCounter = 0;
+
+function jsonp(url) {
+  return new Promise(function(resolve, reject) {
+    var cbName = '__gasCallback' + (++jsonpCounter);
+    var script  = document.createElement('script');
+    var timer   = setTimeout(function() {
+      cleanup();
+      reject(new Error('Request timed out after 30s'));
+    }, 30000);
+
+    function cleanup() {
+      clearTimeout(timer);
+      delete window[cbName];
+      if (script.parentNode) script.parentNode.removeChild(script);
+    }
+
+    window[cbName] = function(data) { cleanup(); resolve(data); };
+    script.onerror  = function()    { cleanup(); reject(new Error('Network error')); };
+    script.src      = url + '&callback=' + cbName;
+    document.head.appendChild(script);
+  });
+}
+
 function gasGet(action, params) {
   var url = GAS_URL + '?action=' + encodeURIComponent(action);
-  if (params) {
-    Object.keys(params).forEach(function(k) {
-      url += '&' + encodeURIComponent(k) + '=' + encodeURIComponent(params[k]);
-    });
-  }
-  return fetch(url).then(function(r) { return r.json(); });
+  if (params) Object.keys(params).forEach(function(k) {
+    url += '&' + encodeURIComponent(k) + '=' + encodeURIComponent(params[k]);
+  });
+  return jsonp(url);
 }
 
 function gasPost(action, payload) {
-  // Send as GET with payload encoded as a parameter — avoids CORS preflight
   var url = GAS_URL + '?action=' + encodeURIComponent(action) +
             '&payload=' + encodeURIComponent(JSON.stringify(payload));
-  return fetch(url).then(function(r) { return r.json(); });
+  return jsonp(url);
 }
 
-// ── SCREEN ROUTING ────────────────────────────────────────────
+// ── ROUTING ───────────────────────────────────────────────────
 function go(id) {
   document.querySelectorAll('#app .screen').forEach(function(s) { s.classList.remove('active'); });
   document.getElementById(id).classList.add('active');
 }
 
-// ── PAGE LOAD ─────────────────────────────────────────────────
+// ── INIT ──────────────────────────────────────────────────────
 window.addEventListener('load', function() {
   tick();
-  // Check for ?room= in URL — direct link from QR code
   var m = window.location.search.match(/[?&]room=([^&]+)/);
-  if (m) loadRoom(m[1]);
+  if (m) loadRoom(decodeURIComponent(m[1]));
 });
 
-// ── QR FILE INPUT ─────────────────────────────────────────────
-// Uses <input capture="environment"> to open camera without permission API.
-// Scales large photos down before decoding — phone cameras take huge images
-// that jsQR can't decode reliably at full resolution.
-function handleQRFile(input) {
-  if (!input.files || !input.files[0]) return;
-  showToast('Reading QR code…');
-
-  var reader = new FileReader();
-  reader.onload = function(e) {
-    var img    = new Image();
-    img.onload = function() {
-      var code = null;
-
-      // Try multiple resolutions — start small for speed, go larger if needed
-      var sizes = [600, 1000, 1500, img.width];
-      for (var s = 0; s < sizes.length; s++) {
-        var maxSize = sizes[s];
-        var scale   = Math.min(1, maxSize / Math.max(img.width, img.height));
-        var w       = Math.round(img.width  * scale);
-        var h       = Math.round(img.height * scale);
-
-        var canvas = document.createElement('canvas');
-        canvas.width  = w;
-        canvas.height = h;
-        var ctx = canvas.getContext('2d');
-        ctx.drawImage(img, 0, 0, w, h);
-        var imageData = ctx.getImageData(0, 0, w, h);
-
-        // Try both inversion modes
-        code = jsQR(imageData.data, imageData.width, imageData.height,
-                    { inversionAttempts: 'dontInvert' });
-        if (!code) {
-          code = jsQR(imageData.data, imageData.width, imageData.height,
-                      { inversionAttempts: 'onlyInvert' });
-        }
-        if (!code) {
-          code = jsQR(imageData.data, imageData.width, imageData.height,
-                      { inversionAttempts: 'attemptBoth' });
-        }
-
-        if (code && code.data) break; // found it
-      }
-
-      input.value = ''; // reset so same QR can be scanned again
-
-      if (code && code.data) {
-        parseQR(code.data);
-      } else {
-        showToast('Could not read QR code — hold steady and try again');
-      }
-    };
-    img.onerror = function() { showToast('Could not load image'); };
-    img.src = e.target.result;
-  };
-  reader.readAsDataURL(input.files[0]);
+// ── LIVE CAMERA SCAN ──────────────────────────────────────────
+function startScan() {
+  go('s-scanning');
+  openCamera();
 }
 
+function openCamera() {
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    showToast('Camera not supported — use manual picker');
+    go('s-home');
+    return;
+  }
+
+  navigator.mediaDevices.getUserMedia({
+    video: {
+      facingMode: { ideal: facingMode },
+      width:  { ideal: 1280 },
+      height: { ideal: 720 },
+    }
+  })
+  .then(function(stream) {
+    videoStream = stream;
+    var video   = document.getElementById('qr-video');
+    video.srcObject = stream;
+    video.play();
+
+    var canvas  = document.createElement('canvas');
+    var ctx     = canvas.getContext('2d');
+
+    scanInterval = setInterval(function() {
+      if (video.readyState !== video.HAVE_ENOUGH_DATA) return;
+      canvas.width  = video.videoWidth;
+      canvas.height = video.videoHeight;
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      var img  = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      var code = jsQR(img.data, img.width, img.height, { inversionAttempts: 'dontInvert' });
+      if (code && code.data) {
+        stopScan();
+        parseQR(code.data);
+      }
+    }, 200);
+  })
+  .catch(function(err) {
+    stopScan();
+    if (err.name === 'NotAllowedError') {
+      showToast('Camera permission denied — allow in browser settings');
+    } else {
+      showToast('Camera error: ' + err.message);
+    }
+    go('s-home');
+  });
+}
+
+function stopScan() {
+  if (scanInterval) { clearInterval(scanInterval); scanInterval = null; }
+  if (videoStream)  { videoStream.getTracks().forEach(function(t) { t.stop(); }); videoStream = null; }
+  var v = document.getElementById('qr-video');
+  if (v) v.srcObject = null;
+  go('s-home');
+}
+
+function flipCamera() {
+  facingMode = facingMode === 'environment' ? 'user' : 'environment';
+  if (scanInterval) { clearInterval(scanInterval); scanInterval = null; }
+  if (videoStream)  { videoStream.getTracks().forEach(function(t) { t.stop(); }); videoStream = null; }
+  openCamera();
+}
+
+// ── QR PARSE ─────────────────────────────────────────────────
 function parseQR(data) {
-  // Extract ?room= from a URL, or treat raw value as room ID
   var m = data.match(/[?&]room=([^&\s]+)/);
-  loadRoom(m ? m[1] : data.trim());
+  loadRoom(m ? decodeURIComponent(m[1]) : data.trim());
 }
 
 // ── ROOM LOOKUP ───────────────────────────────────────────────
@@ -295,34 +362,30 @@ function loadRoom(roomId) {
   go('s-detecting');
   document.getElementById('det-room').textContent = 'Room ' + roomId;
   document.getElementById('det-sub').textContent  = 'Looking up current period…';
-
   gasGet('getClassForRoom', { roomId: roomId })
-    .then(function(result) {
-      if (result.error)         { showToast(result.error); go('s-home'); return; }
-      if (result.noCurrentClass){ showToast(result.reason || 'No class right now'); loadFallback(); return; }
-      openAttendance(result);
+    .then(function(r) {
+      if (r.error)         { showToast(r.error); go('s-home'); return; }
+      if (r.noCurrentClass){ showToast(r.reason || 'No class right now'); loadFallback(); return; }
+      openAttendance(r);
     })
-    .catch(function(err) { showToast('Error: ' + err.message); go('s-home'); });
+    .catch(function(e) { showToast('Error: ' + e.message); go('s-home'); });
 }
 
 // ── ATTENDANCE FORM ───────────────────────────────────────────
 function openAttendance(cls) {
   currentClass = cls;
   attState     = {};
-
   document.getElementById('att-class').textContent = cls.className || cls.sectionName || '';
   document.getElementById('att-meta').textContent  =
     [cls.teacherName, cls.day, cls.period,
      cls.startTime ? cls.startTime + '–' + cls.endTime : '']
     .filter(Boolean).join(' · ');
-
   var pills = '';
   if (cls.roomName) pills += '<span class="pill pill-blue">' + cls.roomName + '</span>';
-  if (cls.period)   pills += '<span class="pill pill-gray">' + cls.period  + '</span>';
+  if (cls.period)   pills += '<span class="pill pill-gray">' + cls.period   + '</span>';
   pills += '<button class="not-your-class" onclick="loadFallback()">Not your class?</button>';
   document.getElementById('att-pills').innerHTML = pills;
   document.getElementById('att-error').classList.remove('show');
-
   var students = cls.students || [];
   students.forEach(function(s) { attState[s.id] = 'present'; });
   renderStudents(students);
@@ -331,22 +394,21 @@ function openAttendance(cls) {
 }
 
 function renderStudents(students) {
-  var html = '';
   if (!students || !students.length) {
-    html = '<div style="padding:40px;text-align:center;color:#aaa">No students found</div>';
-  } else {
-    students.forEach(function(s) {
-      html += '<div class="student-row" id="row-' + s.id + '">' +
-        '<div class="avatar">' + initials(s.name) + '</div>' +
-        '<div class="student-name">' + s.name + '</div>' +
-        '<div class="status-btns">' +
-          '<button class="sbtn sbtn-present on" onclick="setStatus(\'' + s.id + '\',\'present\')">P</button>' +
-          '<button class="sbtn sbtn-tardy"      onclick="setStatus(\'' + s.id + '\',\'tardy\')">T</button>' +
-          '<button class="sbtn sbtn-absent"     onclick="setStatus(\'' + s.id + '\',\'absent\')">A</button>' +
-        '</div></div>';
-    });
+    document.getElementById('student-list').innerHTML =
+      '<div style="padding:40px;text-align:center;color:#aaa">No students found</div>';
+    updateProgress(); return;
   }
-  document.getElementById('student-list').innerHTML = html;
+  document.getElementById('student-list').innerHTML = students.map(function(s) {
+    return '<div class="student-row" id="row-' + s.id + '">' +
+      '<div class="avatar">' + initials(s.name) + '</div>' +
+      '<div class="student-name">' + s.name + '</div>' +
+      '<div class="status-btns">' +
+        '<button class="sbtn sbtn-present on" onclick="setStatus(\'' + s.id + '\',\'present\')">P</button>' +
+        '<button class="sbtn sbtn-tardy"      onclick="setStatus(\'' + s.id + '\',\'tardy\')">T</button>' +
+        '<button class="sbtn sbtn-absent"     onclick="setStatus(\'' + s.id + '\',\'absent\')">A</button>' +
+      '</div></div>';
+  }).join('');
   updateProgress();
 }
 
@@ -355,42 +417,40 @@ function setStatus(id, status) {
   var row = document.getElementById('row-' + id);
   if (!row) return;
   row.querySelectorAll('.sbtn').forEach(function(b) { b.classList.remove('on'); });
-  var idx = { present: 0, tardy: 1, absent: 2 }[status];
-  if (row.querySelectorAll('.sbtn')[idx]) row.querySelectorAll('.sbtn')[idx].classList.add('on');
-  updateTally();
-  updateProgress();
+  var btns = row.querySelectorAll('.sbtn');
+  var idx  = { present: 0, tardy: 1, absent: 2 }[status];
+  if (btns[idx]) btns[idx].classList.add('on');
+  updateTally(); updateProgress();
 }
 
 function updateTally() {
-  var p = 0, t = 0, a = 0;
-  Object.values(attState).forEach(function(s) {
-    if (s === 'present') p++; else if (s === 'tardy') t++; else if (s === 'absent') a++;
+  var p=0,t=0,a=0;
+  Object.values(attState).forEach(function(s){
+    if(s==='present')p++; else if(s==='tardy')t++; else if(s==='absent')a++;
   });
-  document.getElementById('t-present').textContent = p;
-  document.getElementById('t-tardy').textContent   = t;
-  document.getElementById('t-absent').textContent  = a;
+  document.getElementById('t-present').textContent=p;
+  document.getElementById('t-tardy').textContent=t;
+  document.getElementById('t-absent').textContent=a;
 }
 
 function updateProgress() {
   var total  = Object.keys(attState).length;
   var marked = Object.values(attState).filter(Boolean).length;
-  document.getElementById('prog-lbl').textContent   = marked + ' / ' + total;
-  document.getElementById('submit-btn').disabled    = marked < total;
+  document.getElementById('prog-lbl').textContent  = marked + ' / ' + total;
+  document.getElementById('submit-btn').disabled   = marked < total;
 }
 
 function submitAttendance() {
   if (!currentClass) return;
   var btn = document.getElementById('submit-btn');
   btn.disabled = true; btn.textContent = 'Submitting…';
-
   var today   = new Date();
   var dateStr = today.getFullYear() + '-' +
-    String(today.getMonth() + 1).padStart(2, '0') + '-' +
-    String(today.getDate()).padStart(2, '0');
-
+    String(today.getMonth()+1).padStart(2,'0') + '-' +
+    String(today.getDate()).padStart(2,'0');
   var payload = {
     sectionId:   currentClass.sectionId,
-    className:   currentClass.className || currentClass.sectionName || '',
+    className:   currentClass.className   || currentClass.sectionName || '',
     teacherName: currentClass.teacherName || '',
     roomName:    currentClass.roomName    || '',
     period:      currentClass.period      || '',
@@ -399,24 +459,23 @@ function submitAttendance() {
       return { studentId: id, status: attState[id], note: '' };
     }),
   };
-
   gasPost('submitAttendance', payload)
-    .then(function(result) {
+    .then(function(r) {
       btn.disabled = false; btn.textContent = 'Submit attendance';
-      if (result.success) {
+      if (r.success) {
         document.getElementById('success-sub').textContent =
           payload.records.length + ' students marked for ' + payload.className;
         go('s-success');
       } else {
         var e = document.getElementById('att-error');
-        e.textContent = result.error || 'Submission failed';
+        e.textContent = r.error || 'Submission failed — please try again';
         e.classList.add('show');
-        showToast(result.queued ? 'Queued for retry' : 'Submission failed');
+        showToast(r.queued ? 'Queued for retry' : 'Submission failed');
       }
     })
-    .catch(function(err) {
+    .catch(function(e) {
       btn.disabled = false; btn.textContent = 'Submit attendance';
-      showToast('Error: ' + err.message);
+      showToast('Error: ' + e.message);
     });
 }
 
@@ -431,13 +490,13 @@ function loadFallback() {
       go('s-fallback');
       renderFallbackList();
     })
-    .catch(function(err) { showToast('Could not load schedule: ' + err.message); go('s-home'); });
+    .catch(function(e) { showToast('Could not load schedule: ' + e.message); go('s-home'); });
 }
 
 function switchTab(tab) {
   fallbackTab = tab;
   ['teacher','room','block'].forEach(function(t) {
-    document.getElementById('seg-' + t).className = 'seg-btn ' + (t === tab ? 'selected' : 'inactive');
+    document.getElementById('seg-' + t).className = 'seg-btn ' + (t===tab?'selected':'inactive');
   });
   renderFallbackList();
 }
@@ -445,127 +504,119 @@ function switchTab(tab) {
 function renderFallbackList() {
   if (!scheduleData) return;
   var html = '';
-
   if (fallbackTab === 'teacher') {
     var map = scheduleData.teacherSchedule || {};
     Object.keys(map).sort(function(a,b){
       return ((map[a][0]||{}).teacherName||'').localeCompare((map[b][0]||{}).teacherName||'');
     }).forEach(function(tid) {
-      var cls = map[tid]; if (!cls||!cls.length) return;
-      var name = cls[0].teacherName || 'Unknown';
-      html += item(initials(name), '', name, cls.length + ' class' + (cls.length>1?'es':'') + ' today',
-        'showTeacherClasses(\'' + tid + '\')');
+      var cls=map[tid]; if(!cls||!cls.length) return;
+      html += fi(initials(cls[0].teacherName||''), '', cls[0].teacherName||'Unknown',
+        cls.length+' class'+(cls.length>1?'es':'')+' today', 'showTeacherClasses(\''+tid+'\')');
     });
-
   } else if (fallbackTab === 'room') {
     var map = scheduleData.roomSchedule || {};
     Object.keys(map).sort(function(a,b){
       return ((map[a][0]||{}).roomName||'').localeCompare((map[b][0]||{}).roomName||'');
     }).forEach(function(rid) {
-      var cls = map[rid]; if (!cls||!cls.length) return;
-      var rn = cls[0].roomName || 'Room ' + rid;
-      html += item(rn.replace('Room ','Rm '), 'room', rn, cls.length + ' class' + (cls.length>1?'es':''),
-        'showRoomClasses(\'' + rid + '\')');
+      var cls=map[rid]; if(!cls||!cls.length) return;
+      var rn=cls[0].roomName||'Room '+rid;
+      html += fi(rn.replace('Room ','Rm '),'room',rn,
+        cls.length+' class'+(cls.length>1?'es':''), 'showRoomClasses(\''+rid+'\')');
     });
-
-  } else if (fallbackTab === 'block') {
-    // Build block map from roomSchedule
-    var blockMap = {};
-    var rs = scheduleData.roomSchedule || {};
-    Object.keys(rs).forEach(function(rid) {
-      rs[rid].forEach(function(cls) {
-        var bk = cls.period || 'No Period';
-        if (!blockMap[bk]) blockMap[bk] = { classes: [], startTime: cls.startTime, endTime: cls.endTime, abbr: cls.periodAbbr || bk };
+  } else {
+    var blockMap={};
+    var rs=scheduleData.roomSchedule||{};
+    Object.keys(rs).forEach(function(rid){
+      rs[rid].forEach(function(cls){
+        var bk=cls.period||'No Period';
+        if(!blockMap[bk]) blockMap[bk]={classes:[],startTime:cls.startTime,endTime:cls.endTime,abbr:cls.periodAbbr||bk};
         blockMap[bk].classes.push(cls);
       });
     });
     Object.keys(blockMap).sort(function(a,b){
       return (blockMap[a].startTime||'').localeCompare(blockMap[b].startTime||'');
-    }).forEach(function(bk) {
-      var bd   = blockMap[bk];
-      var time = bd.startTime ? bd.startTime + '–' + bd.endTime : '';
-      var detail = [time, bd.classes.length + ' class' + (bd.classes.length>1?'es':'')].filter(Boolean).join(' · ');
-      html += item(bd.abbr, 'block', bk, detail, 'showBlockClasses(\'' + encodeURIComponent(bk) + '\')');
+    }).forEach(function(bk){
+      var bd=blockMap[bk];
+      var time=bd.startTime?bd.startTime+'–'+bd.endTime:'';
+      var detail=[time,bd.classes.length+' class'+(bd.classes.length>1?'es':'')].filter(Boolean).join(' · ');
+      html += fi(bd.abbr,'block',bk,detail,'showBlockClasses(\''+encodeURIComponent(bk)+'\')');
     });
   }
-
-  if (!html) html = '<div style="padding:40px;text-align:center;color:#aaa">No classes loaded</div>';
+  if (!html) html='<div style="padding:40px;text-align:center;color:#aaa">No classes loaded</div>';
   document.getElementById('fallback-list').innerHTML = html;
 }
 
-function item(icon, iconClass, name, detail, onclick) {
-  return '<div class="fallback-item" onclick="' + onclick + '">' +
-    '<div class="fi-icon ' + iconClass + '">' + icon + '</div>' +
-    '<div class="fi-main"><div class="fi-name">' + name + '</div>' +
-    '<div class="fi-detail">' + detail + '</div></div>' +
+function fi(icon,iconClass,name,detail,onclick) {
+  return '<div class="fallback-item" onclick="'+onclick+'">' +
+    '<div class="fi-icon '+iconClass+'">'+icon+'</div>' +
+    '<div class="fi-main"><div class="fi-name">'+name+'</div>' +
+    '<div class="fi-detail">'+detail+'</div></div>' +
     '<div class="fi-arrow">›</div></div>';
 }
 
 function showTeacherClasses(tid) {
-  var cls  = ((scheduleData||{}).teacherSchedule||{})[tid] || [];
-  var name = cls.length ? cls[0].teacherName : '';
-  var html = backRow(name, 'teacher');
-  cls.forEach(function(c) { html += classRow(c); });
-  document.getElementById('fallback-list').innerHTML = html;
+  var cls=((scheduleData||{}).teacherSchedule||{})[tid]||[];
+  var html=backRow(cls.length?cls[0].teacherName:'','teacher');
+  cls.forEach(function(c){html+=classRow(c);}); 
+  document.getElementById('fallback-list').innerHTML=html;
 }
 
 function showRoomClasses(rid) {
-  var cls  = ((scheduleData||{}).roomSchedule||{})[rid] || [];
-  var name = cls.length ? (cls[0].roomName || 'Room ' + rid) : '';
-  var html = backRow(name, 'room');
-  cls.forEach(function(c) { html += classRow(c); });
-  document.getElementById('fallback-list').innerHTML = html;
+  var cls=((scheduleData||{}).roomSchedule||{})[rid]||[];
+  var html=backRow(cls.length?(cls[0].roomName||'Room '+rid):'','room');
+  cls.forEach(function(c){html+=classRow(c);});
+  document.getElementById('fallback-list').innerHTML=html;
 }
 
-function showBlockClasses(encodedBlock) {
-  var bk  = decodeURIComponent(encodedBlock);
-  var rs  = ((scheduleData||{}).roomSchedule)||{};
-  var cls = [];
-  Object.keys(rs).forEach(function(rid) {
-    rs[rid].forEach(function(c) { if ((c.period||'No Period') === bk) cls.push(c); });
+function showBlockClasses(enc) {
+  var bk=decodeURIComponent(enc);
+  var rs=((scheduleData||{}).roomSchedule)||{};
+  var cls=[];
+  Object.keys(rs).forEach(function(rid){
+    rs[rid].forEach(function(c){if((c.period||'No Period')===bk)cls.push(c);});
   });
-  cls.sort(function(a,b){ return (a.roomName||'').localeCompare(b.roomName||''); });
-  var html = backRow(bk, 'block');
-  cls.forEach(function(c) { html += classRow(c); });
-  document.getElementById('fallback-list').innerHTML = html;
+  cls.sort(function(a,b){return (a.roomName||'').localeCompare(b.roomName||'');});
+  var html=backRow(bk,'block');
+  cls.forEach(function(c){html+=classRow(c);});
+  document.getElementById('fallback-list').innerHTML=html;
 }
 
 function classRow(cls) {
-  var meta = [cls.teacherName, cls.period,
-    cls.startTime ? cls.startTime + '–' + cls.endTime : ''].filter(Boolean).join(' · ');
-  return '<div class="fallback-item" onclick="loadClassBySection(\'' + cls.sectionId + '\')">' +
-    '<div class="fi-icon block" style="border-radius:10px">' + (cls.periodAbbr || cls.period || '—') + '</div>' +
-    '<div class="fi-main"><div class="fi-name">' + (cls.sectionName||'') + '</div>' +
-    '<div class="fi-detail">' + meta + '</div></div>' +
+  var meta=[cls.teacherName,cls.period,
+    cls.startTime?cls.startTime+'–'+cls.endTime:''].filter(Boolean).join(' · ');
+  return '<div class="fallback-item" onclick="loadClassBySection(\''+cls.sectionId+'\')">'+
+    '<div class="fi-icon block" style="border-radius:10px">'+(cls.periodAbbr||cls.period||'—')+'</div>'+
+    '<div class="fi-main"><div class="fi-name">'+(cls.sectionName||'')+'</div>'+
+    '<div class="fi-detail">'+meta+'</div></div>'+
     '<div class="fi-arrow">›</div></div>';
 }
 
 function loadClassBySection(sectionId) {
-  var cls = null;
-  var rs  = ((scheduleData||{}).roomSchedule)||{};
-  Object.keys(rs).forEach(function(rid) {
-    rs[rid].forEach(function(c) { if (c.sectionId === sectionId) cls = c; });
+  var cls=null;
+  var rs=((scheduleData||{}).roomSchedule)||{};
+  Object.keys(rs).forEach(function(rid){
+    rs[rid].forEach(function(c){if(c.sectionId===sectionId)cls=c;});
   });
-  if (!cls) { showToast('Class not found'); return; }
+  if(!cls){showToast('Class not found');return;}
   go('s-detecting');
-  document.getElementById('det-room').textContent = cls.roomName || '';
-  document.getElementById('det-sub').textContent  = 'Loading roster…';
-  gasGet('getClassBySection', { sectionId: sectionId })
-    .then(function(result) {
-      if (result.error) { showToast(result.error); go('s-fallback'); return; }
-      cls.students = result.students;
+  document.getElementById('det-room').textContent=cls.roomName||'';
+  document.getElementById('det-sub').textContent='Loading roster…';
+  gasGet('getClassBySection',{sectionId:sectionId})
+    .then(function(r){
+      if(r.error){showToast(r.error);go('s-fallback');return;}
+      cls.students=r.students;
       openAttendance(cls);
     })
-    .catch(function() { showToast('Could not load roster'); go('s-fallback'); });
+    .catch(function(){showToast('Could not load roster');go('s-fallback');});
 }
 
-function backRow(name, tab) {
-  return '<div class="fallback-back-row" style="padding:14px 24px;display:flex;align-items:center;gap:12px;border-bottom:1px solid #f0f0f0">' +
-    '<button style="background:none;border:none;cursor:pointer;font-size:22px;color:#888;padding:0" onclick="switchTab(\'' + tab + '\')">←</button>' +
-    '<span style="font-size:16px;font-weight:500">' + name + '</span></div>';
+function backRow(name,tab) {
+  return '<div style="padding:14px 24px;display:flex;align-items:center;gap:12px;border-bottom:1px solid #f0f0f0">'+
+    '<button style="background:none;border:none;cursor:pointer;font-size:22px;color:#888;padding:0" onclick="switchTab(\''+tab+'\')">←</button>'+
+    '<span style="font-size:16px;font-weight:500">'+name+'</span></div>';
 }
 
-// ── UTILITIES ─────────────────────────────────────────────────
+// ── UTILS ─────────────────────────────────────────────────────
 function initials(name) {
   return (name||'').split(' ').map(function(w){return w[0];})
     .filter(function(c){return c&&/[A-Za-z]/.test(c);})
@@ -573,21 +624,19 @@ function initials(name) {
 }
 
 function showToast(msg) {
-  var t = document.getElementById('toast');
-  t.textContent = msg; t.classList.add('show');
-  setTimeout(function(){ t.classList.remove('show'); }, 3500);
+  var t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  setTimeout(function(){t.classList.remove('show');},3500);
 }
 
 function tick() {
-  var now = new Date();
-  var h = now.getHours(), m = now.getMinutes();
-  var el = document.getElementById('clock');
-  if (el) el.textContent =
-    (h%12||12) + ':' + (m<10?'0':'') + m + (h<12?' AM':' PM') + ' · ' +
+  var now=new Date(),h=now.getHours(),m=now.getMinutes();
+  var el=document.getElementById('clock');
+  if(el) el.textContent=(h%12||12)+':'+(m<10?'0':'')+m+(h<12?' AM':' PM')+' · '+
     now.toLocaleDateString('en-US',{weekday:'long',month:'short',day:'numeric'});
 }
 tick();
-setInterval(tick, 30000);
+setInterval(tick,30000);
 </script>
 </body>
 </html>
