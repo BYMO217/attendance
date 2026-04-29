@@ -5,6 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
   <title>BYMO Attendance</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%23185FA5'/><text y='.9em' font-size='80' x='10'>📋</text></svg>">
+  <!-- PWA — allows "Add to Home Screen" which saves camera permission permanently -->
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="BYMO Attendance">
+  <meta name="theme-color" content="#185FA5">
   <style>
     *{box-sizing:border-box;margin:0;padding:0}
     html,body{height:100%;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#fff;color:#1a1a1a;-webkit-tap-highlight-color:transparent}
@@ -51,10 +57,10 @@
     .det-room{font-size:20px;font-weight:500}
     .det-sub{font-size:14px;color:#888}
 
-    /* ATTENDANCE — key layout using absolute positioning */
-    #s-attendance{display:none}
-    #s-attendance.active{display:block}
-    .att-top{position:absolute;top:0;left:0;right:0;background:#fff;z-index:2}
+    /* ATTENDANCE - flexbox, one scroll, footer always visible */
+    #s-attendance{display:none;flex-direction:column;height:100vh}
+    #s-attendance.active{display:flex}
+    .att-top{flex-shrink:0}
     .att-header{padding:14px 18px 10px;border-bottom:1px solid #eee}
     .att-class{font-size:17px;font-weight:600}
     .att-meta{font-size:12px;color:#888;margin-top:2px}
@@ -71,9 +77,8 @@
     .tv-g{color:#1D9E75}.tv-r{color:#E24B4A}.tv-a{color:#BA7517}
     .error-banner{background:#FCEBEB;color:#A32D2D;padding:7px 16px;font-size:12px;border-bottom:1px solid #F7C1C1;display:none}
     .error-banner.show{display:block}
-
-    /* Student list scrolls between fixed top and fixed bottom */
-    .att-scroll{position:absolute;left:0;right:0;overflow-y:auto;-webkit-overflow-scrolling:touch}
+    /* Only this div scrolls */
+    .att-scroll{flex:1;overflow-y:scroll;-webkit-overflow-scrolling:touch;min-height:0;overscroll-behavior:contain}
     .student-row{display:flex;align-items:center;padding:9px 14px;border-bottom:1px solid #f0f0f0;gap:10px}
     .avatar{width:34px;height:34px;border-radius:50%;background:#E6F1FB;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:#185FA5;flex-shrink:0}
     .student-name{font-size:14px;font-weight:500;flex:1}
@@ -83,9 +88,8 @@
     .sbtn-present.on{background:#C0DD97;color:#27500A;border-color:#639922}
     .sbtn-tardy.on{background:#FAC775;color:#633806;border-color:#BA7517}
     .sbtn-absent.on{background:#F7C1C1;color:#791F1F;border-color:#E24B4A}
-
-    /* Footer always at bottom */
-    .att-bottom{position:absolute;bottom:0;left:0;right:0;padding:10px 14px;border-top:2px solid #eee;background:#fff;display:flex;align-items:center;gap:10px;z-index:2}
+    /* Footer never shrinks, never scrolls */
+    .att-bottom{flex-shrink:0;padding:10px 14px;border-top:2px solid #eee;background:#fff;display:flex;align-items:center;gap:10px}
     .submit-btn{flex:1;padding:15px;border-radius:12px;background:#185FA5;color:#fff;border:none;font-size:15px;font-weight:700;cursor:pointer}
     .submit-btn:active{background:#0C447C}
     .submit-btn:disabled{background:#b0c4de}
@@ -254,20 +258,6 @@ function gasPost(action, payload) {
 function go(id) {
   document.querySelectorAll('.screen').forEach(function(s){ s.classList.remove('active'); });
   document.getElementById(id).classList.add('active');
-  // Recalculate attendance scroll bounds whenever we show that screen
-  if (id === 's-attendance') setTimeout(fixAttLayout, 50);
-}
-
-function fixAttLayout() {
-  var top    = document.getElementById('att-top');
-  var list   = document.getElementById('student-list');
-  var bottom = document.querySelector('.att-bottom');
-  if (!top || !list || !bottom) return;
-  var topH    = top.offsetHeight;
-  var botH    = bottom.offsetHeight;
-  var winH    = window.innerHeight;
-  list.style.top    = topH + 'px';
-  list.style.bottom = botH + 'px';
 }
 
 // ── INIT ──────────────────────────────────────────────────────
@@ -277,7 +267,6 @@ window.addEventListener('load', function() {
   if (m) loadRoom(decodeURIComponent(m[1]));
   else go('s-home');
 });
-window.addEventListener('resize', fixAttLayout);
 
 // ── CAMERA ───────────────────────────────────────────────────
 function startScan() { go('s-scanning'); openCamera(); }
