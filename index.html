@@ -555,14 +555,19 @@ function renderFallbackList() {
     });
   } else if (fallbackTab === 'room') {
     var map = scheduleData.roomSchedule || {};
-    // Sort numerically by room number extracted from name
+    // Sort numerically by room number, then named rooms (Gym, LS Classroom etc) after
     Object.keys(map).sort(function(a,b){
       var na = (map[a][0]||{}).roomName||'';
       var nb = (map[b][0]||{}).roomName||'';
-      // Extract numeric part for proper numeric sort (Room 9 < Room 10 < Room 11)
       var ma = na.match(/(\d+)/);
       var mb = nb.match(/(\d+)/);
+      // Both have numbers — sort numerically
       if (ma && mb) return parseInt(ma[1]) - parseInt(mb[1]);
+      // Only a has number — a comes first
+      if (ma) return -1;
+      // Only b has number — b comes first
+      if (mb) return 1;
+      // Neither has number — sort alphabetically
       return na.localeCompare(nb);
     }).forEach(function(rid){
       var cls=map[rid]; if(!cls||!cls.length) return;
