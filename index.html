@@ -368,7 +368,18 @@ function openAttendance(cls) {
 }
 
 function statusLabel(code) {
-  return code === 8 ? 'Tardy' : code === 29 ? 'Absent' : code === 0 ? 'Present' : 'Marked';
+  var labels = {
+    0:'Present', 8:'Tardy', 9:'Tardy (Excused)', 29:'Absent', 30:'Absent (Excused)',
+    32:'Not Expected', 33:'Leave of Absence', 50:'Early Dismissal',
+    70:'Imperfect Attendance', 87:'Commute LE', 88:'Family Obligation',
+    89:'Sick', 90:'Discretionary Day', 91:'GO', 92:'Mechaneches',
+    94:'Guidance Counselor', 95:'Sick LE', 96:'GO LE', 97:'Mechaneches LE',
+    98:'Medical Appt LE', 99:'Medical Appt', 100:'College Guidance LE',
+    101:'Guidance LE', 102:'Mechaneches', 106:'Sick ED', 107:'Discretionary ED',
+    108:'Medical Appt ED', 109:'Family Obligation LE', 110:'Family Obligation ED',
+    112:'First Time LE', 113:'Discretionary LE', 114:'College Guidance',
+  };
+  return labels[code] || ('Status ' + code);
 }
 
 function renderStudents(students) {
