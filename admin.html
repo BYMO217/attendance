@@ -1,1 +1,545 @@
 
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Attendance Admin — BYMO</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#F4F6FA;color:#1a1a1a;font-size:14px;min-height:100vh}
+
+    /* TOP BAR */
+    .topbar{background:#185FA5;color:#fff;padding:0 28px;display:flex;align-items:center;justify-content:space-between;height:58px;position:sticky;top:0;z-index:100;box-shadow:0 2px 8px rgba(0,0,0,.15)}
+    .topbar-left{display:flex;align-items:center;gap:12px}
+    .topbar-logo{width:32px;height:32px;background:rgba(255,255,255,.2);border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px}
+    .topbar-title{font-size:16px;font-weight:600}
+    .topbar-date{font-size:12px;color:rgba(255,255,255,.7);margin-left:4px}
+    .topbar-right{display:flex;align-items:center;gap:8px}
+    .tbtn{padding:7px 14px;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;border:none;display:inline-flex;align-items:center;gap:6px;transition:all .15s}
+    .tbtn-white{background:rgba(255,255,255,.15);color:#fff}
+    .tbtn-white:hover{background:rgba(255,255,255,.25)}
+    .tbtn-solid{background:#fff;color:#185FA5}
+    .tbtn-solid:hover{background:#e8f0fb}
+    .tbtn:disabled{opacity:.5;cursor:default}
+    .last-sync{font-size:11px;color:rgba(255,255,255,.6)}
+
+    /* MAIN */
+    .main{max-width:1200px;margin:0 auto;padding:24px 28px;display:flex;flex-direction:column;gap:20px}
+
+    /* STAT GRID */
+    .stat-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:14px}
+    .stat-card{background:#fff;border-radius:12px;padding:18px 20px;border:1px solid #e8ecf2;position:relative;overflow:hidden}
+    .stat-card::after{content:'';position:absolute;top:0;left:0;right:0;height:3px;border-radius:12px 12px 0 0}
+    .stat-card.green::after{background:#1D9E75}
+    .stat-card.amber::after{background:#BA7517}
+    .stat-card.red::after{background:#E24B4A}
+    .stat-card.blue::after{background:#185FA5}
+    .stat-card.gray::after{background:#aaa}
+    .stat-val{font-size:30px;font-weight:600;line-height:1;margin-top:4px}
+    .stat-val.green{color:#1D9E75}.stat-val.amber{color:#BA7517}.stat-val.red{color:#E24B4A}.stat-val.blue{color:#185FA5}
+    .stat-lbl{font-size:11px;color:#888;margin-top:6px;font-weight:500;text-transform:uppercase;letter-spacing:.04em}
+    .stat-sub{font-size:11px;color:#aaa;margin-top:3px}
+
+    /* PROGRESS BAR */
+    .prog-bar{height:6px;background:#eee;border-radius:3px;overflow:hidden;margin-top:10px}
+    .prog-fill{height:100%;border-radius:3px;transition:width .4s ease}
+
+    /* PANEL */
+    .panel{background:#fff;border-radius:12px;border:1px solid #e8ecf2;overflow:hidden}
+    .panel-header{padding:14px 20px;border-bottom:1px solid #f0f0f0;display:flex;align-items:center;justify-content:space-between;gap:12px}
+    .panel-title{font-size:14px;font-weight:600;display:flex;align-items:center;gap:8px}
+    .panel-actions{display:flex;gap:8px;align-items:center;flex-shrink:0}
+
+    /* BUTTONS */
+    .btn{padding:6px 12px;border-radius:7px;font-size:12px;font-weight:500;cursor:pointer;border:1px solid #ddd;background:#fff;color:#333;display:inline-flex;align-items:center;gap:5px;transition:all .1s;white-space:nowrap}
+    .btn:hover{background:#f5f5f5}
+    .btn-blue{background:#185FA5;color:#fff;border-color:#185FA5}
+    .btn-blue:hover{background:#0C447C}
+    .btn-red{color:#E24B4A;border-color:#F7C1C1}
+    .btn-red:hover{background:#FCEBEB}
+    .btn:disabled{opacity:.4;cursor:default;pointer-events:none}
+
+    /* TABLE */
+    .tbl-wrap{overflow-x:auto}
+    table{width:100%;border-collapse:collapse;font-size:13px}
+    th{font-size:11px;font-weight:600;color:#888;text-align:left;padding:9px 16px;border-bottom:1px solid #f0f0f0;white-space:nowrap;text-transform:uppercase;letter-spacing:.04em;background:#fafafa}
+    td{padding:10px 16px;border-bottom:1px solid #f5f5f5;vertical-align:middle}
+    tr:last-child td{border-bottom:none}
+    tbody tr:hover td{background:#f9fbff}
+
+    /* BADGES */
+    .badge{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:600;white-space:nowrap}
+    .badge-green{background:#EAF3DE;color:#2D6011}
+    .badge-amber{background:#FAEEDA;color:#7A4500}
+    .badge-red{background:#FCEBEB;color:#9B1C1C}
+    .badge-gray{background:#f0f0f0;color:#666}
+    .badge-blue{background:#E6F1FB;color:#0C447C}
+    .dot{width:6px;height:6px;border-radius:50%;display:inline-block}
+    .dot-green{background:#1D9E75}.dot-amber{background:#BA7517}.dot-red{background:#E24B4A}.dot-gray{background:#aaa}
+
+    /* CACHE BAR */
+    .cache-bar{display:flex;align-items:center;gap:12px;padding:12px 20px;font-size:13px;flex-wrap:wrap}
+    .cache-indicator{display:flex;align-items:center;gap:8px;font-weight:500}
+
+    /* LOG */
+    .log-row{display:flex;align-items:flex-start;gap:12px;padding:11px 16px;border-bottom:1px solid #f5f5f5;font-size:13px}
+    .log-row:last-child{border-bottom:none}
+    .log-time{font-size:11px;color:#aaa;white-space:nowrap;padding-top:2px;min-width:68px}
+    .log-body{flex:1;min-width:0}
+    .log-class{font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .log-detail{font-size:12px;color:#888;margin-top:2px}
+
+    /* BLOCK TIMELINE */
+    .block-grid{display:grid;gap:1px;background:#f0f0f0}
+    .block-row{background:#fff;display:grid;grid-template-columns:100px 1fr;align-items:stretch}
+    .block-label{padding:12px 16px;font-size:12px;font-weight:600;color:#555;border-right:1px solid #f0f0f0;display:flex;flex-direction:column;justify-content:center}
+    .block-time{font-size:10px;color:#aaa;font-weight:400;margin-top:2px}
+    .block-classes{display:flex;flex-wrap:wrap;gap:6px;padding:10px 14px;align-items:center}
+    .class-chip{padding:5px 10px;border-radius:8px;font-size:12px;background:#E6F1FB;color:#0C447C;border:1px solid #C5DCF5;cursor:default}
+    .class-chip.submitted{background:#EAF3DE;color:#2D6011;border-color:#B5D98A}
+    .class-chip.pending{background:#FAEEDA;color:#7A4500;border-color:#F5C97A}
+
+    /* QUEUE */
+    .queue-row{display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid #f5f5f5;font-size:13px}
+    .queue-row:last-child{border-bottom:none}
+
+    /* EMPTY */
+    .empty{padding:36px;text-align:center;color:#aaa;font-size:13px}
+
+    /* LOADING */
+    .loading{display:flex;align-items:center;justify-content:center;padding:60px;color:#aaa;gap:10px;font-size:14px}
+    .spinner{width:22px;height:22px;border:2px solid #eee;border-top-color:#185FA5;border-radius:50%;animation:spin .6s linear infinite;flex-shrink:0}
+    @keyframes spin{to{transform:rotate(360deg)}}
+
+    /* SECTION TABS */
+    .tabs{display:flex;border-bottom:1px solid #f0f0f0;padding:0 20px}
+    .tab{padding:10px 16px;font-size:13px;font-weight:500;color:#888;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .15s}
+    .tab.active{color:#185FA5;border-bottom-color:#185FA5}
+
+    /* RATE LIMIT */
+    .rate-bar{display:flex;align-items:center;gap:8px;font-size:12px;color:#888}
+    .rate-fill{height:4px;border-radius:2px;background:#1D9E75;transition:width .3s}
+    .rate-track{flex:1;height:4px;background:#eee;border-radius:2px;overflow:hidden}
+
+    @media(max-width:900px){
+      .stat-grid{grid-template-columns:repeat(2,1fr)}
+      .main{padding:16px}
+    }
+  </style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-left">
+    <img src="data:image/png;base64,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" alt="BYMO" style="width:32px;height:32px;border-radius:8px;object-fit:contain;background:#fff;padding:2px">
+    <div>
+      <div class="topbar-title">Attendance Admin</div>
+    </div>
+    <span class="topbar-date" id="topbar-date"></span>
+  </div>
+  <div class="topbar-right">
+    <span class="last-sync" id="last-sync"></span>
+    <button class="tbtn tbtn-white" onclick="refreshAll()" id="refresh-btn">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M1 4v6h6"/><path d="M23 20v-6h-6"/><path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4-4.64 4.36A9 9 0 0 1 3.51 15"/></svg>
+      Refresh
+    </button>
+    <button class="tbtn tbtn-solid" onclick="triggerCacheRefresh()" id="cache-btn">
+      Refresh schedule cache
+    </button>
+  </div>
+</div>
+
+<div class="main" id="main">
+  <div class="loading"><div class="spinner"></div> Loading dashboard…</div>
+</div>
+
+<script>
+var dashData  = null;
+var activeTab = 'classes';
+
+var GAS_URL = 'https://script.google.com/macros/s/AKfycbzCovXcc1wPLjGeqhp4GDWdB_WuOYD5P9Z5JGgKtP8Rmq3PwuWvcqHIV0g9m5mMniOvDg/exec';
+var _jc = 0;
+function gasGet(action, params) {
+  var url = GAS_URL + '?action=' + encodeURIComponent(action);
+  if (params) Object.keys(params).forEach(function(k){ url += '&'+encodeURIComponent(k)+'='+encodeURIComponent(params[k]); });
+  return new Promise(function(resolve, reject) {
+    var cb = '__ac'+(++_jc), s = document.createElement('script');
+    var t = setTimeout(function(){ cleanup(); reject(new Error('Timeout')); }, 30000);
+    function cleanup(){ clearTimeout(t); delete window[cb]; if(s.parentNode) s.parentNode.removeChild(s); }
+    window[cb] = function(d){ cleanup(); resolve(d); };
+    s.onerror  = function(){ cleanup(); reject(new Error('Network error')); };
+    s.src = url + '&callback=' + cb;
+    document.head.appendChild(s);
+  });
+}
+
+function refreshAll() {
+  var btn = document.getElementById('refresh-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<div class="spinner" style="width:13px;height:13px;border-width:2px"></div> Loading…';
+
+  // Fetch dashboard data from Drive via GAS — no size limits
+  gasGet('getAdminDashboardUrl')
+    .then(function(res) {
+      if (!res.url) throw new Error('No URL returned');
+      return fetch('https://corsproxy.io/?' + encodeURIComponent(res.url));
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      btn.disabled = false;
+      btn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M1 4v6h6"/><path d="M23 20v-6h-6"/><path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4-4.64 4.36A9 9 0 0 1 3.51 15"/></svg> Refresh';
+      document.getElementById('last-sync').textContent = 'Updated ' + fmt(new Date());
+      if (!data.success) {
+        document.getElementById('main').innerHTML = '<div style="padding:40px;color:#E24B4A;text-align:center">Error: ' + (data.error||'unknown') + '</div>';
+        return;
+      }
+      dashData = data;
+      render(data);
+    })
+    .catch(function(err) {
+      btn.disabled = false;
+      btn.innerHTML = 'Refresh';
+      document.getElementById('main').innerHTML = '<div style="padding:40px;color:#E24B4A;text-align:center">Failed: ' + err.message + '</div>';
+    });
+}
+
+function render(d) {
+  var now = new Date();
+  document.getElementById('topbar-date').textContent =
+    now.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'});
+
+  var total = d.allClasses ? d.allClasses.length : 0;
+  var sub   = d.submittedCount || 0;
+  var pct   = total > 0 ? Math.round(sub/total*100) : 0;
+  var pend  = d.pendingCount || 0;
+  var queue = d.queuedCount  || 0;
+  var errs  = (d.recentErrors||[]).length;
+
+  document.getElementById('main').innerHTML =
+
+  // ── STATS
+  '<div class="stat-grid">' +
+    scard(sub+' / '+total, 'Submitted', pct===100?'green':pct>50?'amber':'red',
+      '<div class="prog-bar"><div class="prog-fill" style="width:'+pct+'%;background:'+(pct===100?'#1D9E75':pct>50?'#BA7517':'#E24B4A')+'"></div></div>') +
+    scard(pct+'%', 'Completion', pct===100?'green':pct>50?'amber':'red', 'Today\'s attendance') +
+    scard(pend, 'Pending', pend>0?'amber':'green', pend>0?'Classes not yet submitted':'All up to date') +
+    scard(queue, 'Queued', queue>0?'red':'green', queue>0?'Will retry automatically':'No failures') +
+    scard(errs, 'API errors', errs>0?'red':'green', 'Recent period') +
+  '</div>' +
+
+  // ── CACHE STATUS
+  '<div class="panel">' +
+    '<div class="cache-bar">' +
+      '<div class="cache-indicator">' +
+        '<span class="dot '+(d.cacheHealthy?'dot-green':'dot-red')+'"></span>' +
+        '<span>'+(d.cacheHealthy?'Schedule cache is current':'Cache is stale — refresh needed')+'</span>' +
+      '</div>' +
+      '<span style="color:#aaa">|</span>' +
+      '<span style="color:#888">Last refresh: '+fmtTs(d.lastRefresh)+'</span>' +
+      '<span style="color:#aaa">|</span>' +
+      '<span style="color:#888">Cache date: '+(d.cacheDate||'—')+'</span>' +
+    '</div>' +
+  '</div>' +
+
+  // ── MAIN PANEL WITH TABS
+  '<div class="panel">' +
+    '<div class="tabs">' +
+      '<div class="tab'+(activeTab==='classes'?' active':'')+'" onclick="switchTab(\'classes\')">By block/period</div>' +
+      '<div class="tab'+(activeTab==='table'?' active':'')+'" onclick="switchTab(\'table\')">Table view</div>' +
+      '<div class="tab'+(activeTab==='log'?' active':'')+'" onclick="switchTab(\'log\')">Submission log</div>' +
+      (queue>0?'<div class="tab'+(activeTab==='queue'?' active':'')+'" onclick="switchTab(\'queue\')">Queue ('+queue+')</div>':'') +
+      (errs>0?'<div class="tab'+(activeTab==='errors'?' active':'')+'" onclick="switchTab(\'errors\')">Errors ('+errs+')</div>':'') +
+    '</div>' +
+    '<div id="tab-content">' + renderTab(d) + '</div>' +
+  '</div>';
+}
+
+function switchTab(tab) {
+  activeTab = tab;
+  document.getElementById('tab-content').innerHTML = renderTab(dashData);
+  document.querySelectorAll('.tab').forEach(function(t) {
+    t.classList.toggle('active', t.textContent.startsWith(tab==='classes'?'By':tab==='table'?'Table':tab==='log'?'Sub':tab==='queue'?'Queue':'Error'));
+  });
+}
+
+function renderTab(d) {
+  if (activeTab === 'classes') return renderBlockView(d);
+  if (activeTab === 'table')   return renderTableView(d);
+  if (activeTab === 'log')     return renderLogView(d);
+  if (activeTab === 'queue')   return renderQueueView(d);
+  if (activeTab === 'errors')  return renderErrorView(d);
+  return '';
+}
+
+// ── BLOCK VIEW ────────────────────────────────────────────────
+function renderBlockView(d) {
+  var classes = d.allClasses || [];
+  if (!classes.length) return '<div class="empty">No classes loaded — run a cache refresh</div>';
+
+  // Group by period
+  var blockMap = {};
+  classes.forEach(function(c) {
+    var bk = c.period || 'No Period';
+    if (!blockMap[bk]) blockMap[bk] = { startTime: c.startTime, endTime: c.endTime, classes: [] };
+    blockMap[bk].classes.push(c);
+  });
+
+  // Sort blocks by actual time (not alphabetically) — "No Period" goes last
+  function toMins(t) {
+    if (!t) return 9999;
+    var m = t.match(/(\d+):(\d+)\s*(AM|PM)/i);
+    if (!m) return 9999;
+    var h=parseInt(m[1]),mn=parseInt(m[2]),pm=m[3].toUpperCase()==='PM';
+    if(pm&&h!==12)h+=12; if(!pm&&h===12)h=0;
+    return h*60+mn;
+  }
+
+  var blocks = Object.keys(blockMap).sort(function(a,b) {
+    var ta = toMins(blockMap[a].startTime);
+    var tb = toMins(blockMap[b].startTime);
+    if (ta !== tb) return ta - tb;
+    return a.localeCompare(b);
+  });
+
+  var html = '<div class="block-grid">';
+  blocks.forEach(function(bk) {
+    var bd = blockMap[bk];
+    var allSub = bd.classes.every(function(c){return c.submitted;});
+    var noneSub= bd.classes.every(function(c){return !c.submitted;});
+    var subCnt = bd.classes.filter(function(c){return c.submitted;}).length;
+    html += '<div class="block-row">' +
+      '<div class="block-label">' +
+        '<span style="color:#185FA5">' + bk + '</span>' +
+        '<span class="block-time">' + (bd.startTime ? bd.startTime+'–'+bd.endTime : '') + '</span>' +
+        '<span style="font-size:10px;color:'+(allSub?'#1D9E75':noneSub?'#aaa':'#BA7517')+';margin-top:4px">' +
+          subCnt+'/'+bd.classes.length+' submitted' +
+        '</span>' +
+      '</div>' +
+      '<div class="block-classes">';
+    bd.classes.sort(function(a,b){return (a.roomName||'').localeCompare(b.roomName||'');})
+      .forEach(function(c) {
+        var cls = 'class-chip ' + (c.submitted ? 'submitted' : 'pending');
+        var tip = (c.teacherName||'') + ' · ' + (c.roomName||'');
+        html += '<div class="'+cls+'" title="'+tip+'">' +
+          (c.className||'Class') +
+          (c.roomName ? ' <span style="opacity:.6;font-size:10px">'+c.roomName+'</span>' : '') +
+        '</div>';
+      });
+    html += '</div></div>';
+  });
+  html += '</div>';
+
+  // Summary footer
+  var sub = classes.filter(function(c){return c.submitted;}).length;
+  html += '<div style="padding:12px 16px;border-top:1px solid #f0f0f0;font-size:12px;color:#888;display:flex;gap:16px">' +
+    '<span><span class="dot dot-green" style="margin-right:4px"></span>Submitted: '+sub+'</span>' +
+    '<span><span class="dot dot-amber" style="margin-right:4px"></span>Pending: '+(classes.length-sub)+'</span>' +
+    '<span>Total: '+classes.length+' classes</span>' +
+  '</div>';
+  return html;
+}
+
+// ── TABLE SORT STATE ──────────────────────────────────────────
+var _sortCol = 'startTime';
+var _sortDir = 1;
+
+function sortTable(col) {
+  if (_sortCol === col) { _sortDir *= -1; } else { _sortCol = col; _sortDir = 1; }
+  document.getElementById('tab-content').innerHTML = renderTab(dashData);
+}
+
+// ── TABLE VIEW ────────────────────────────────────────────────
+function renderTableView(d) {
+  var classes = (d.allClasses || []).slice();
+  if (!classes.length) return '<div class="empty">No classes loaded</div>';
+
+  function toMins(t) {
+    if (!t) return 9999;
+    var m = t.match(/(\d+):(\d+)\s*(AM|PM)/i);
+    if (!m) return 9999;
+    var h=parseInt(m[1]),mn=parseInt(m[2]),pm=m[3].toUpperCase()==='PM';
+    if(pm&&h!==12)h+=12; if(!pm&&h===12)h=0;
+    return h*60+mn;
+  }
+
+  classes.sort(function(a,b) {
+    var av, bv;
+    if (_sortCol === 'startTime') { av = toMins(a.startTime); bv = toMins(b.startTime); return (av-bv)*_sortDir; }
+    if (_sortCol === 'period')    { av = toMins(a.startTime); bv = toMins(b.startTime); return (av-bv)*_sortDir; }
+    if (_sortCol === 'submitted') { av = a.submitted?1:0; bv = b.submitted?1:0; return (av-bv)*_sortDir; }
+    av = (a[_sortCol]||'').toString().toLowerCase();
+    bv = (b[_sortCol]||'').toString().toLowerCase();
+    return av < bv ? -_sortDir : av > bv ? _sortDir : 0;
+  });
+
+  function th(label, col) {
+    var arrow = _sortCol===col ? (_sortDir===1?'▲':'▼') : '⇅';
+    return '<th style="cursor:pointer;user-select:none" onclick="sortTable(\''+col+'\')">' + label + ' <span style="font-size:9px;color:#aaa">'+arrow+'</span></th>';
+  }
+
+  var html = '<div class="panel-header" style="border-top:none">' +
+    '<span class="panel-title">'+classes.length+' classes today</span>' +
+    '<div class="panel-actions">' +
+      '<input type="text" placeholder="Filter…" oninput="filterTable(this.value)" ' +
+        'style="padding:5px 10px;border:1px solid #ddd;border-radius:7px;font-size:12px;width:160px">' +
+    '</div>' +
+  '</div>' +
+  '<div class="tbl-wrap"><table>' +
+  '<thead><tr>' +
+    th('Period','period') + th('Class','className') + th('Teacher','teacherName') +
+    th('Room','roomName') + th('Time','startTime') + th('Status','submitted') + '<th>Submitted At</th>' +
+  '</tr></thead>' +
+  '<tbody id="class-tbody">';
+
+  classes.forEach(function(c) {
+    var badge = c.submitted
+      ? (c.errorCount>0
+          ? '<span class="badge badge-amber">Partial</span>'
+          : '<span class="badge badge-green"><span class="dot dot-green"></span>Done</span>')
+      : '<span class="badge badge-gray">Pending</span>';
+    html += '<tr>' +
+      '<td><span class="badge badge-blue">'+(c.period||'—')+'</span></td>' +
+      '<td style="font-weight:500;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+(c.className||'—')+'</td>' +
+      '<td style="color:#555">'+(c.teacherName||'—')+'</td>' +
+      '<td>'+(c.roomName||'—')+'</td>' +
+      '<td style="color:#888;white-space:nowrap">'+(c.startTime&&c.endTime?c.startTime+'–'+c.endTime:'—')+'</td>' +
+      '<td>'+badge+'</td>' +
+      '<td style="color:#aaa;font-size:12px">'+(c.submittedAt?fmtTs(c.submittedAt):'—')+'</td>' +
+    '</tr>';
+  });
+  html += '</tbody></table></div>';
+  return html;
+
+// ── LOG VIEW ──────────────────────────────────────────────────
+function filterTable(q) {
+  var rows = document.querySelectorAll('#class-tbody tr');
+  q = q.toLowerCase();
+  rows.forEach(function(r) {
+    r.style.display = r.textContent.toLowerCase().includes(q) ? '' : 'none';
+  });
+}
+
+function renderLogView(d) {
+  var log = d.recentLog || [];
+  var html = '<div class="panel-header" style="border-top:none">' +
+    '<span class="panel-title">Submission log</span>' +
+    '<button class="btn btn-red" onclick="clearLog()">Clear log</button>' +
+  '</div>';
+  if (!log.length) return html + '<div class="empty">No submissions yet today</div>';
+  log.forEach(function(e) {
+    html += '<div class="log-row">' +
+      '<div class="log-time">'+fmtTs(e.timestamp).split(' ').slice(-1)[0]+'<br><span style="font-size:10px">'+fmtTs(e.timestamp).split(' ').slice(0,-1).join(' ')+'</span></div>' +
+      '<div class="log-body">' +
+        '<div class="log-class">'+(e.className||'Unknown')+
+          (e.queued?'<span class="badge badge-amber" style="margin-left:6px;font-size:10px">queued</span>':'')+
+        '</div>' +
+        '<div class="log-detail">'+(e.teacherName||'')+(e.roomName?' · '+e.roomName:'')+(e.period?' · '+e.period:'')+' · '+(e.submitted||0)+' students'+(e.errorCount>0?' · '+e.errorCount+' errors':'')+' · Date: '+(e.date||'?')+'</div>' +
+      '</div>' +
+      '<span class="badge '+(e.errorCount>0?'badge-amber':'badge-green')+'">'+(e.errorCount>0?'Partial':'OK')+'</span>' +
+    '</div>';
+  });
+  return html;
+}
+
+// ── QUEUE VIEW ────────────────────────────────────────────────
+function renderQueueView(d) {
+  var items = d.queuedItems || [];
+  var html = '<div class="panel-header" style="border-top:none">' +
+    '<span class="panel-title">Queued submissions ('+items.length+')</span>' +
+    '<div class="panel-actions">' +
+      '<button class="btn btn-blue" onclick="retryQueue()">Retry all</button>' +
+      '<button class="btn btn-red"  onclick="clearQueue()">Clear queue</button>' +
+    '</div>' +
+  '</div>';
+  if (!items.length) return html + '<div class="empty">Queue is empty</div>';
+  items.forEach(function(item) {
+    var p = item.payload || {};
+    html += '<div class="queue-row">' +
+      '<span class="dot dot-red"></span>' +
+      '<div style="flex:1">' +
+        '<div style="font-weight:500">'+(p.className||'Section '+p.sectionId)+'</div>' +
+        '<div style="font-size:12px;color:#888;margin-top:2px">'+(p.records?p.records.length+' students · ':'')+
+          'Date: '+(p.date||'?')+' · Attempts: '+(item.attempts||0)+' · Queued: '+fmtTs(item.timestamp)+'</div>' +
+      '</div>' +
+    '</div>';
+  });
+  return html;
+}
+
+// ── ERROR VIEW ────────────────────────────────────────────────
+function renderErrorView(d) {
+  var errors = d.recentErrors || [];
+  var html = '<div class="panel-header" style="border-top:none">' +
+    '<span class="panel-title">Recent API errors ('+errors.length+')</span>' +
+    '<button class="btn btn-red" onclick="clearErrors()">Clear</button>' +
+  '</div>';
+  if (!errors.length) return html + '<div class="empty">No errors</div>';
+  errors.forEach(function(e) {
+    html += '<div style="padding:10px 16px;border-bottom:1px solid #f5f5f5;font-size:12px;font-family:monospace">' +
+      '<div style="color:#888;margin-bottom:2px">['+fmtTs(e.timestamp)+'] '+e.context+' — HTTP '+e.code+'</div>' +
+      '<div style="color:#E24B4A">'+(e.message||'').slice(0,300)+'</div>' +
+    '</div>';
+  });
+  return html;
+}
+
+// ── HELPERS ───────────────────────────────────────────────────
+function scard(val, lbl, color, sub) {
+  return '<div class="stat-card '+color+'">' +
+    '<div class="stat-lbl">'+lbl+'</div>' +
+    '<div class="stat-val '+color+'">'+val+'</div>' +
+    (sub?'<div class="stat-sub">'+sub+'</div>':'') +
+  '</div>';
+}
+
+function fmtTs(iso) {
+  if (!iso||iso==='Never') return iso||'—';
+  try {
+    var d = new Date(iso);
+    return d.toLocaleDateString('en-US',{month:'short',day:'numeric'})+' '+
+           d.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
+  } catch(e){ return iso; }
+}
+
+function fmt(d) {
+  return d.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
+}
+
+// ── ACTIONS ───────────────────────────────────────────────────
+function triggerCacheRefresh() {
+  var btn = document.getElementById('cache-btn');
+  btn.disabled = true; btn.textContent = 'Refreshing…';
+  gasGet('manualRefresh')
+    .then(function(r) {
+      btn.disabled = false; btn.textContent = 'Refresh schedule cache';
+      if (r.success) { alert('Cache refreshed!\nClasses today: '+(r.classesToday||'?')+'\nRooms: '+(r.rooms||'?')); refreshAll(); }
+      else { alert('Failed: '+(r.error||'unknown')); }
+    })
+    .catch(function(err) { btn.disabled=false; btn.textContent='Refresh schedule cache'; alert('Error: '+err.message); });
+}
+
+function retryQueue() {
+  gasGet('adminRetryQueue').then(function(r){alert('Retried: '+r.retried+'\nRemaining: '+r.remaining);refreshAll();}).catch(function(e){alert('Error: '+e.message);});
+}
+
+function clearQueue() {
+  if (!confirm('Clear all queued submissions?')) return;
+  gasGet('adminClearQueue').then(function(){refreshAll();});
+}
+
+function clearLog() {
+  if (!confirm('Clear submission log?')) return;
+  gasGet('adminClearLog').then(function(){refreshAll();});
+}
+
+function clearErrors() {
+  gasGet('adminClearErrors').then(function(){refreshAll();});
+}
+
+// ── INIT ──────────────────────────────────────────────────────
+refreshAll();
+setInterval(refreshAll, 2 * 60 * 1000);
+</script>
+</body>
+</html>
