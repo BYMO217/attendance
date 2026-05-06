@@ -25,6 +25,8 @@
     .tbtn-solid:hover{background:#e8f0fb}
     .tbtn:disabled{opacity:.5;cursor:default}
     .last-sync{font-size:11px;color:rgba(255,255,255,.6)}
+    .live-dot{width:7px;height:7px;border-radius:50%;background:#1D9E75;display:inline-block;margin-right:5px;animation:pulse 2s ease-in-out infinite}
+    @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(.8)}}
 
     /* MAIN */
     .main{max-width:1200px;margin:0 auto;padding:24px 28px;display:flex;flex-direction:column;gap:20px}
@@ -63,8 +65,8 @@
     .btn:disabled{opacity:.4;cursor:default;pointer-events:none}
 
     /* TABLE */
-    .tbl-wrap{overflow-x:auto}
-    table{width:100%;border-collapse:collapse;font-size:13px}
+    .tbl-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+    table{width:100%;border-collapse:collapse;font-size:13px;min-width:600px}
     th{font-size:11px;font-weight:600;color:#888;text-align:left;padding:9px 16px;border-bottom:1px solid #f0f0f0;white-space:nowrap;text-transform:uppercase;letter-spacing:.04em;background:#fafafa}
     td{padding:10px 16px;border-bottom:1px solid #f5f5f5;vertical-align:middle}
     tr:last-child td{border-bottom:none}
@@ -121,13 +123,41 @@
     .tab:hover{color:#185FA5;background:#f4f7fc}
     .tab.active{color:#185FA5;border-bottom-color:#185FA5;background:#EBF3FB}
 
-    /* RATE LIMIT */
-    .rate-bar{display:flex;align-items:center;gap:8px;font-size:12px;color:#888}
+    /* Mobile refresh menu */
+    .refresh-wrap{position:relative;display:inline-flex}
+    .refresh-menu{display:none;position:absolute;top:calc(100% + 6px);right:0;background:#fff;border-radius:10px;box-shadow:0 4px 20px rgba(0,0,0,.18);min-width:200px;z-index:200;overflow:hidden}
+    .refresh-menu.open{display:block}
+    .refresh-menu-item{display:block;width:100%;padding:13px 16px;border:none;background:none;text-align:left;font-size:14px;color:#1a1a1a;cursor:pointer;font-family:inherit}
+    .refresh-menu-item:hover{background:#f4f7fc}
+    .refresh-menu-item+.refresh-menu-item{border-top:1px solid #f0f0f0}
+    @media(min-width:701px){.mobile-refresh-toggle{display:none!important}}    .rate-bar{display:flex;align-items:center;gap:8px;font-size:12px;color:#888}
     .rate-fill{height:4px;border-radius:2px;background:#1D9E75;transition:width .3s}
     .rate-track{flex:1;height:4px;background:#eee;border-radius:2px;overflow:hidden}
 
+    /* MOBILE */
     @media(max-width:1100px){.stat-grid{grid-template-columns:repeat(3,1fr)}}
-    @media(max-width:900px){.stat-grid{grid-template-columns:repeat(2,1fr)}.main{padding:16px}}
+    @media(max-width:700px){
+      .hide-mobile{display:none!important}
+      .stat-grid{grid-template-columns:repeat(2,1fr);gap:10px}
+      .main{padding:12px}
+      .topbar{padding:0 14px;height:52px}
+      .topbar-title{font-size:14px}
+      .topbar-date{display:none}
+      .last-sync{font-size:10px}
+      .tbtn{padding:6px 10px;font-size:12px}
+      .panel-header{padding:10px 14px;flex-wrap:wrap;gap:8px}
+      .tabs{padding:0 12px;overflow-x:auto;-webkit-overflow-scrolling:touch;flex-wrap:nowrap}
+      .tab{padding:9px 12px;font-size:12px;white-space:nowrap;flex-shrink:0}
+      .block-row{grid-template-columns:80px 1fr}
+      .block-label{padding:10px 10px}
+      .block-classes{padding:8px 10px}
+      .class-chip{font-size:11px;padding:4px 8px}
+      table{font-size:12px}
+      th,td{padding:8px 10px}
+      .stat-val{font-size:22px}
+      .stat-card{padding:14px 14px}
+      .cache-bar{padding:10px 14px;font-size:12px;gap:8px}
+    }
   </style>
 </head>
 <body>
@@ -141,14 +171,21 @@
     <span class="topbar-date" id="topbar-date"></span>
   </div>
   <div class="topbar-right">
-    <span class="last-sync" id="last-sync"></span>
-    <button class="tbtn tbtn-white" onclick="refreshAll()" id="refresh-btn">
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M1 4v6h6"/><path d="M23 20v-6h-6"/><path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4-4.64 4.36A9 9 0 0 1 3.51 15"/></svg>
-      Refresh
-    </button>
-    <button class="tbtn tbtn-solid" onclick="triggerCacheRefresh()" id="cache-btn">
-      Refresh schedule cache
-    </button>
+    <span class="last-sync" id="last-sync"><span class="live-dot"></span>Live</span>
+    <div class="refresh-wrap">
+      <button class="tbtn tbtn-white" onclick="toggleRefreshMenu()" id="refresh-btn">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M1 4v6h6"/><path d="M23 20v-6h-6"/><path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4-4.64 4.36A9 9 0 0 1 3.51 15"/></svg>
+        Refresh ▾
+      </button>
+      <div class="refresh-menu" id="refresh-menu">
+        <button class="refresh-menu-item" onclick="doRefresh();closeRefreshMenu()">
+          🔄 Refresh dashboard
+        </button>
+        <button class="refresh-menu-item" onclick="triggerCacheRefresh();closeRefreshMenu()">
+          📅 Refresh schedule cache
+        </button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -191,28 +228,40 @@ function toMins(t) {
 function fmt(d){ return d.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'}); }
 function fmtTs(ts){ if(!ts)return '--'; var d=new Date(ts); return d.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'}); }
 
-function refreshAll() {
+function toggleRefreshMenu() {
+  var menu = document.getElementById('refresh-menu');
+  menu.classList.toggle('open');
+}
+function closeRefreshMenu() {
+  var menu = document.getElementById('refresh-menu');
+  if (menu) menu.classList.remove('open');
+}
+// Close menu when tapping outside
+document.addEventListener('click', function(e) {
+  if (!e.target.closest('.refresh-wrap')) closeRefreshMenu();
+});
+
+function doRefresh() {
   var btn = document.getElementById('refresh-btn');
-  btn.disabled = true;
-  btn.innerHTML = 'Loading...';
+  if (btn) { btn.disabled = true; btn.innerHTML = 'Loading... ▾'; }
   gasGet('getAdminDashboardData')
     .then(function(data) {
-      btn.disabled = false;
-      btn.innerHTML = 'Refresh';
-      document.getElementById('last-sync').textContent = 'Updated ' + fmt(new Date());
+      if (btn) { btn.disabled = false; btn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M1 4v6h6"/><path d="M23 20v-6h-6"/><path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4-4.64 4.36A9 9 0 0 1 3.51 15"/><\/svg> Refresh \u25be'; }
+      document.getElementById('last-sync').innerHTML = '<span class="live-dot"><\/span>Updated ' + fmt(new Date());
       if (!data.success) {
-        document.getElementById('main').innerHTML = '<div style="padding:40px;color:#E24B4A;text-align:center">Error: ' + (data.error||'unknown') + '</div>';
+        document.getElementById('main').innerHTML = '<div style="padding:40px;color:#E24B4A;text-align:center">Error: ' + (data.error||'unknown') + '<\/div>';
         return;
       }
       dashData = data;
       render(data);
     })
     .catch(function(err) {
-      btn.disabled = false;
-      btn.innerHTML = 'Refresh';
-      document.getElementById('main').innerHTML = '<div style="padding:40px;color:#E24B4A;text-align:center">Failed: ' + err.message + '</div>';
+      if (btn) { btn.disabled = false; btn.innerHTML = 'Refresh \u25be'; }
+      document.getElementById('main').innerHTML = '<div style="padding:40px;color:#E24B4A;text-align:center">Failed: ' + err.message + '<\/div>';
     });
 }
+
+function refreshAll() { doRefresh(); }
 
 function gradeNum(name) {
   if (!name) return 99;
@@ -405,8 +454,9 @@ function renderTableView(d) {
     return (a.className||'').localeCompare(b.className||'')*_sortDir;
   });
   function th(label, col) {
-    var arrow = _sortCol===col ? (_sortDir===1?'[^]':'[v]') : '[.]';
-    return '<th style="cursor:pointer;user-select:none" onclick="sortTable(\''+col+'\')">'+label+' <span style="font-size:9px;color:#aaa">'+arrow+'</span></th>';
+    var sorted = _sortCol === col;
+    var style = sorted ? 'color:#185FA5;font-weight:700' : '';
+    return '<th style="cursor:pointer;user-select:none;'+style+'" onclick="sortTable(\''+col+'\')">'+label+'</th>';
   }
   var html = '<div class="panel-header" style="border-top:none">' +
     '<span class="panel-title">'+classes.length+' classes today</span>' +
@@ -501,8 +551,38 @@ function clearQueue()  { if(!confirm('Clear all queued submissions?'))return; ga
 function clearLog()    { if(!confirm('Clear submission log?'))return; gasGet('adminClearLog').then(function(){refreshAll();}); }
 function clearErrors() { gasGet('adminClearErrors').then(function(){refreshAll();}); }
 
+var _lastSubmittedCount = -1;
+var _lastLogCount = -1;
+var _polling = false;
+
+function pollForUpdates() {
+  if (_polling) return;
+  _polling = true;
+  gasGet('getAdminDashboardData')
+    .then(function(data) {
+      _polling = false;
+      if (!data.success) return;
+      var newSub = data.submittedCount || 0;
+      var newLog = (data.recentLog || []).length;
+      var newVc  = data.veracrossCount || 0;
+      // Only re-render if something actually changed
+      if (newSub !== _lastSubmittedCount || newLog !== _lastLogCount || newVc !== _lastVcCount) {
+        _lastSubmittedCount = newSub;
+        _lastLogCount       = newLog;
+        _lastVcCount        = newVc;
+        dashData = data;
+        render(data);
+        document.getElementById('last-sync').textContent = 'Live \u2022 ' + fmt(new Date());
+      }
+    })
+    .catch(function() { _polling = false; });
+}
+
+var _lastVcCount = -1;
+
 refreshAll();
-setInterval(refreshAll, 2*60*1000);
+// Poll every 20 seconds for live updates
+setInterval(pollForUpdates, 20*1000);
 </script>
 </body>
 </html>
