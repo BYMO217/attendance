@@ -57,7 +57,15 @@
     .det-room{font-size:20px;font-weight:500}
     .det-sub{font-size:14px;color:#888}
 
-    /* ATTENDANCE - 3 row grid: header | scroll | footer */
+    /* Already taken modal */
+    .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:999;display:flex;align-items:center;justify-content:center;padding:24px}
+    .modal-overlay.hidden{display:none}
+    .modal-box{background:#fff;border-radius:20px;padding:28px 24px 24px;max-width:340px;width:100%;text-align:center;box-shadow:0 8px 40px rgba(0,0,0,.18)}
+    .modal-icon{width:56px;height:56px;border-radius:50%;background:#FFF3E0;display:flex;align-items:center;justify-content:center;margin:0 auto 14px;font-size:26px}
+    .modal-title{font-size:17px;font-weight:700;color:#1a1a1a;margin-bottom:8px}
+    .modal-body{font-size:14px;color:#666;line-height:1.6;margin-bottom:22px}
+    .modal-ok{width:100%;padding:14px;border-radius:12px;background:#185FA5;color:#fff;border:none;font-size:15px;font-weight:600;cursor:pointer}
+    .modal-ok:active{background:#0C447C}
     #s-attendance{display:none}
     #s-attendance.active{
       display:grid;
@@ -237,6 +245,16 @@
     <button class="done-btn" onclick="go('s-home')">Done</button>
   </div>
 
+  <!-- Already taken modal -->
+  <div class="modal-overlay hidden" id="already-taken-modal">
+    <div class="modal-box">
+      <div class="modal-icon">⚠️</div>
+      <div class="modal-title">Attendance Already Taken</div>
+      <div class="modal-body">Attendance was already submitted for this class in Veracross. Existing statuses are shown below and cannot be changed.</div>
+      <button class="modal-ok" onclick="dismissAlreadyTaken()">OK, got it</button>
+    </div>
+  </div>
+
 </div><!-- end app -->
 <div class="toast" id="toast"></div>
 
@@ -352,6 +370,10 @@ function loadRoom(roomId) {
     .catch(function(e) { showToast('Error: ' + e.message); go('s-home'); });
 }
 
+function dismissAlreadyTaken() {
+  document.getElementById('already-taken-modal').classList.add('hidden');
+}
+
 // ── ATTENDANCE ────────────────────────────────────────────────
 function openAttendance(cls) {
   currentClass = cls;
@@ -365,11 +387,13 @@ function openAttendance(cls) {
   pills += '<button class="not-your-class" onclick="loadFallback()">Not your class?</button>';
   document.getElementById('att-pills').innerHTML = pills;
   document.getElementById('att-error').classList.remove('show');
-  // Warn if attendance was already taken via Veracross dashboard
+  // Show modal and disable submit if attendance was already taken via Veracross
   if (cls.classAlreadyTaken) {
-    var e = document.getElementById('att-error');
-    e.textContent = 'Attendance was already taken for this class in Veracross. Existing statuses are shown below.';
-    e.classList.add('show');
+    document.getElementById('already-taken-modal').classList.remove('hidden');
+    document.getElementById('submit-btn').disabled = true;
+    document.getElementById('submit-btn').style.background = '#b0c4de';
+  } else {
+    document.getElementById('already-taken-modal').classList.add('hidden');
   }
   renderStudents(cls.students || []);
   updateTally();
