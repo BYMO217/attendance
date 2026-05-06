@@ -112,9 +112,10 @@
     @keyframes spin{to{transform:rotate(360deg)}}
 
     /* SECTION TABS */
-    .tabs{display:flex;border-bottom:1px solid #f0f0f0;padding:0 20px}
-    .tab{padding:10px 16px;font-size:13px;font-weight:500;color:#888;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .15s}
-    .tab.active{color:#185FA5;border-bottom-color:#185FA5}
+    .tabs{display:flex;border-bottom:2px solid #f0f0f0;padding:0 20px;gap:4px}
+    .tab{padding:10px 18px;font-size:13px;font-weight:500;color:#888;cursor:pointer;border:none;background:none;border-bottom:2px solid transparent;margin-bottom:-2px;transition:all .15s;font-family:inherit;border-radius:6px 6px 0 0}
+    .tab:hover{color:#185FA5;background:#f4f7fc}
+    .tab.active{color:#185FA5;border-bottom-color:#185FA5;background:#EBF3FB}
 
     /* RATE LIMIT */
     .rate-bar{display:flex;align-items:center;gap:8px;font-size:12px;color:#888}
@@ -211,6 +212,12 @@ function refreshAll() {
     });
 }
 
+function gradeNum(name) {
+  if (!name) return 99;
+  var m = name.match(/\((\d{1,2})\)/);
+  return m ? parseInt(m[1]) : 99;
+}
+
 function render(d) {
   var now = new Date();
   document.getElementById('topbar-date').textContent =
@@ -245,17 +252,11 @@ function render(d) {
       '</div>' +
     '</div>' +
     '<div class="panel" id="main-panel">' +
-      '<div class="panel-header">' +
-        '<span class="panel-title">Attendance overview</span>' +
-        '<div class="panel-actions">' +
-          '<button class="btn btn-blue" id="cache-btn" onclick="triggerCacheRefresh()">Refresh schedule cache</button>' +
-        '</div>' +
-      '</div>' +
-      '<div class="tab-bar">' +
-        '<button class="tab-btn '+(activeTab==='classes'?'active':'')+'" onclick="switchTab(\'classes\')">By Block/Period</button>' +
-        '<button class="tab-btn '+(activeTab==='table'?'active':'')+'"   onclick="switchTab(\'table\')">Table view</button>' +
-        '<button class="tab-btn '+(activeTab==='log'?'active':'')+'"     onclick="switchTab(\'log\')">Log</button>' +
-        '<button class="tab-btn '+(activeTab==='errors'?'active':'')+'"  onclick="switchTab(\'errors\')">Errors</button>' +
+      '<div class="tabs">' +
+        '<button class="tab '+(activeTab==='classes'?'active':'')+'" onclick="switchTab(\'classes\')">By Block / Period</button>' +
+        '<button class="tab '+(activeTab==='table'  ?'active':'')+'" onclick="switchTab(\'table\')">Table view</button>' +
+        '<button class="tab '+(activeTab==='log'    ?'active':'')+'" onclick="switchTab(\'log\')">Log</button>' +
+        '<button class="tab '+(activeTab==='errors' ?'active':'')+'" onclick="switchTab(\'errors\')">Errors</button>' +
       '</div>' +
       '<div id="tab-content">' + renderTab(d) + '</div>' +
     '</div>';
@@ -271,17 +272,57 @@ function scard(val, label, color, sub) {
   '</div>';
 }
 
+function gradeNum(name) {
+  if (!name) return 99;
+  var m = name.match(/\((\d{1,2})\)/);
+  return m ? parseInt(m[1]) : 99;
+}
+
+function classSort(a, b) {
+  var ga = gradeNum(a.className||''), gb = gradeNum(b.className||'');
+  if (ga !== gb) return ga - gb;
+  return (a.className||'').localeCompare(b.className||'');
+}
+
 function switchTab(tab) {
   activeTab = tab;
+  document.querySelectorAll('.tab').forEach(function(t){ t.classList.remove('active'); });
+  var map = {classes:0, table:1, log:2, errors:3, queue:4};
+  var tabs = document.querySelectorAll('.tab');
+  if (tabs[map[tab]]) tabs[map[tab]].classList.add('active');
   if (dashData) document.getElementById('tab-content').innerHTML = renderTab(dashData);
 }
 
 function renderTab(d) {
   if (activeTab==='classes') return renderBlockView(d);
   if (activeTab==='table')   return renderTableView(d);
+  if (activeTab==='queue')   return renderQueueView(d);
   if (activeTab==='log')     return renderLogView(d);
   if (activeTab==='errors')  return renderErrorView(d);
   return '';
+}
+
+function renderQueueView(d) {
+  var queue = d.queuedItems || [];
+  var html = '<div class="panel-header" style="border-top:none">' +
+    '<span class="panel-title">Queued submissions'+(queue.length?' ('+queue.length+')':'')+'</span>' +
+    '<div class="panel-actions">' +
+      (queue.length ? '<button class="btn btn-blue" onclick="retryQueue()">Retry all</button>' : '') +
+      (queue.length ? '<button class="btn btn-red" onclick="clearQueue()">Clear queue</button>' : '') +
+    '</div></div>';
+  if (!queue.length) return html + '<div class="empty">No queued submissions</div>';
+  html += '<div class="tbl-wrap"><table><thead><tr><th>Class</th><th>Teacher</th><th>Period</th><th>Students</th><th>Queued At</th></tr></thead><tbody>';
+  queue.forEach(function(q) {
+    html += '<tr>' +
+      '<td style="font-weight:500">'+(q.className||'--')+'</td>' +
+      '<td style="color:#555">'+(q.teacherName||'--')+'</td>' +
+      '<td><span class="badge badge-blue">'+(q.period||'--')+'</span></td>' +
+      '<td>'+(q.studentCount||'--')+'</td>' +
+      '<td style="color:#aaa;font-size:12px">'+(q.timestamp?fmtTs(q.timestamp):'--')+'</td>' +
+    '</tr>';
+  });
+  html += '</tbody></table></div>';
+  return html;
 }
 
 function renderBlockView(d) {
@@ -310,14 +351,14 @@ function renderBlockView(d) {
         '<span style="font-size:10px;color:'+(allSub?'#1D9E75':noneSub?'#aaa':'#BA7517')+';margin-top:4px">'+subCnt+'/'+bd.classes.length+' submitted</span>' +
       '</div>' +
       '<div class="block-classes">';
-    bd.classes.sort(function(a,b){return (a.roomName||'').localeCompare(b.roomName||'');})
-      .forEach(function(c) {
-        var tip = (c.teacherName||'') + ' - ' + (c.roomName||'');
-        html += '<div class="class-chip '+(c.submitted?'submitted':'pending')+'" title="'+tip+'">' +
-          (c.className||'Class') +
-          (c.roomName ? ' <span style="opacity:.6;font-size:10px">'+c.roomName+'</span>' : '') +
+    // Sort by grade then alpha
+    bd.classes.slice().sort(classSort).forEach(function(c) {
+      var tip = (c.teacherName||'') + ' - ' + (c.roomName||'');
+      html += '<div class="class-chip '+(c.submitted?'submitted':'pending')+'" title="'+tip+'">' +
+        (c.className||'Class') +
+        (c.roomName ? ' <span style="opacity:.6;font-size:10px">'+c.roomName+'</span>' : '') +
         '</div>';
-      });
+    });
     html += '</div></div>';
   });
   var sub = classes.filter(function(c){return c.submitted;}).length;
@@ -335,12 +376,17 @@ function renderTableView(d) {
   var classes = (d.allClasses||[]).slice();
   if (!classes.length) return '<div class="empty">No classes loaded</div>';
   classes.sort(function(a,b) {
-    var av, bv;
-    if (_sortCol==='startTime'||_sortCol==='period') { return (toMins(a.startTime)-toMins(b.startTime))*_sortDir; }
-    if (_sortCol==='submitted') { return ((a.submitted?1:0)-(b.submitted?1:0))*_sortDir; }
-    av=(a[_sortCol]||'').toString().toLowerCase();
-    bv=(b[_sortCol]||'').toString().toLowerCase();
-    return (av<bv?-1:av>bv?1:0)*_sortDir;
+    if (_sortCol==='submitted') return ((a.submitted?1:0)-(b.submitted?1:0))*_sortDir;
+    if (_sortCol==='teacherName'||_sortCol==='roomName') {
+      var av=(a[_sortCol]||'').toLowerCase(), bv=(b[_sortCol]||'').toLowerCase();
+      return (av<bv?-1:av>bv?1:0)*_sortDir;
+    }
+    // period/time/default: period → grade → alpha
+    var pt = (toMins(a.startTime)-toMins(b.startTime))*_sortDir;
+    if (pt !== 0) return pt;
+    var pg = (gradeNum(a.className||'')-gradeNum(b.className||''))*_sortDir;
+    if (pg !== 0) return pg;
+    return (a.className||'').localeCompare(b.className||'')*_sortDir;
   });
   function th(label, col) {
     var arrow = _sortCol===col ? (_sortDir===1?'[^]':'[v]') : '[.]';
