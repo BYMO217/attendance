@@ -365,6 +365,12 @@ function openAttendance(cls) {
   pills += '<button class="not-your-class" onclick="loadFallback()">Not your class?</button>';
   document.getElementById('att-pills').innerHTML = pills;
   document.getElementById('att-error').classList.remove('show');
+  // Warn if attendance was already taken via Veracross dashboard
+  if (cls.classAlreadyTaken) {
+    var e = document.getElementById('att-error');
+    e.textContent = 'Attendance was already taken for this class in Veracross. Existing statuses are shown below.';
+    e.classList.add('show');
+  }
   renderStudents(cls.students || []);
   updateTally();
   go('s-attendance');
@@ -669,7 +675,9 @@ function loadBySection(sectionId) {
   gasGet('getClassBySection',{sectionId:sectionId})
     .then(function(r){
       if(r.error){showToast(r.error);go('s-fallback');return;}
-      cls.students=r.students; openAttendance(cls);
+      cls.students = r.students;
+      cls.classAlreadyTaken = r.classAlreadyTaken || false;
+      openAttendance(cls);
     })
     .catch(function(){showToast('Could not load roster');go('s-fallback');});
 }
