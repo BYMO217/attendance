@@ -260,7 +260,7 @@ function gasGet(action, params) {
   });
   return new Promise(function(res, rej) {
     var cb = '__gc' + (++_jc);
-    var s  = document.createElement('script');
+    var s  = document.createElement('scr'+'ipt');
     var t  = setTimeout(function(){ cleanup(); rej(new Error('Timeout')); }, 30000);
     function cleanup(){ clearTimeout(t); delete window[cb]; s.parentNode&&s.parentNode.removeChild(s); }
     window[cb] = function(d){ cleanup(); res(d); };
@@ -587,10 +587,21 @@ function renderFallbackList() {
         bm[bk].classes.push(c);
       });
     });
+    function gradeNum(name) {
+      if (!name) return 99;
+      var m = name.match(/\((\d{1,2})\)/);
+      return m ? parseInt(m[1]) : 99;
+    }
     Object.keys(bm).sort(function(a,b){ return toMins(bm[a].st)-toMins(bm[b].st); })
     .forEach(function(bk){
       var bd=bm[bk];
-      var detail=(bd.st?bd.st+'–'+bd.et+' · ':'')+bd.classes.length+' class'+(bd.classes.length>1?'es':'');
+      // Sort classes within period by grade (low→high) then name alphabetically
+      bd.classes.sort(function(a,b){
+        var ga=gradeNum(a.sectionName), gb=gradeNum(b.sectionName);
+        if(ga!==gb) return ga-gb;
+        return (a.sectionName||'').localeCompare(b.sectionName||'');
+      });
+      var detail=(bd.st?bd.st+'-'+bd.et+' · ':'')+bd.classes.length+' class'+(bd.classes.length>1?'es':'');
       html += fbItem(bd.abbr,'period',bk,detail,'showPeriod(\''+encodeURIComponent(bk)+'\')');
     });
   }
@@ -626,7 +637,16 @@ function showPeriod(enc) {
   Object.keys(rs).forEach(function(rid){
     rs[rid].forEach(function(c){if((c.period||'No Period')===bk)cls.push(c);});
   });
-  cls.sort(function(a,b){return (a.roomName||'').localeCompare(b.roomName||'');});
+  function gradeNum(name) {
+    if (!name) return 99;
+    var m = name.match(/\((\d{1,2})\)/);
+    return m ? parseInt(m[1]) : 99;
+  }
+  cls.sort(function(a,b){
+    var ga=gradeNum(a.sectionName), gb=gradeNum(b.sectionName);
+    if(ga!==gb) return ga-gb;
+    return (a.sectionName||'').localeCompare(b.sectionName||'');
+  });
   var html=backRow(bk,'block');
   cls.forEach(function(c){html+=classRow(c);});
   document.getElementById('fb-list').innerHTML=html;
