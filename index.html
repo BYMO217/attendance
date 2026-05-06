@@ -64,8 +64,10 @@
     .modal-icon{width:56px;height:56px;border-radius:50%;background:#FFF3E0;display:flex;align-items:center;justify-content:center;margin:0 auto 14px;font-size:26px}
     .modal-title{font-size:17px;font-weight:700;color:#1a1a1a;margin-bottom:8px}
     .modal-body{font-size:14px;color:#666;line-height:1.6;margin-bottom:22px}
-    .modal-ok{width:100%;padding:14px;border-radius:12px;background:#185FA5;color:#fff;border:none;font-size:15px;font-weight:600;cursor:pointer}
+    .modal-ok{width:100%;padding:14px;border-radius:12px;background:#185FA5;color:#fff;border:none;font-size:15px;font-weight:600;cursor:pointer;margin-bottom:10px}
     .modal-ok:active{background:#0C447C}
+    .modal-override{width:100%;padding:14px;border-radius:12px;background:#E24B4A;color:#fff;border:none;font-size:15px;font-weight:600;cursor:pointer}
+    .modal-override:active{background:#C03030}
     #s-attendance{display:none}
     #s-attendance.active{
       display:grid;
@@ -116,9 +118,10 @@
     .note-input:disabled{background:#f5f5f5;color:#aaa;cursor:default}
     /* Bottom row - always visible */
     #att-foot{display:flex;align-items:center;gap:10px;padding:10px 14px;border-top:2px solid #eee;background:#fff}
+    #att-foot.locked{pointer-events:none}
     .submit-btn{flex:1;padding:15px;border-radius:12px;background:#185FA5;color:#fff;border:none;font-size:15px;font-weight:700;cursor:pointer}
     .submit-btn:active{background:#0C447C}
-    .submit-btn:disabled{background:#b0c4de}
+    .submit-btn:disabled,.submit-btn[disabled]{background:#b0c4de;cursor:not-allowed;pointer-events:none;opacity:.6;user-select:none}
     .prog-lbl{font-size:12px;color:#888;white-space:nowrap;flex-shrink:0}
 
     /* FALLBACK */
@@ -250,8 +253,9 @@
     <div class="modal-box">
       <div class="modal-icon">⚠️</div>
       <div class="modal-title">Attendance Already Taken</div>
-      <div class="modal-body">Attendance was already submitted for this class in Veracross. Existing statuses are shown below and cannot be changed.</div>
-      <button class="modal-ok" onclick="dismissAlreadyTaken()">OK, got it</button>
+      <div class="modal-body">Attendance was already submitted for this class in Veracross. Existing statuses are shown below.</div>
+      <button class="modal-ok" onclick="dismissAlreadyTaken()">OK</button>
+      <button class="modal-override" onclick="overrideAttendance()">Resubmit</button>
     </div>
   </div>
 
@@ -374,6 +378,39 @@ function dismissAlreadyTaken() {
   document.getElementById('already-taken-modal').classList.add('hidden');
 }
 
+function overrideAttendance() {
+  document.getElementById('already-taken-modal').classList.add('hidden');
+  if (!currentClass) return;
+  // Unlock class-level lock only
+  currentClass.locked = false;
+  // Re-enable footer and submit button
+  var attFoot = document.getElementById('att-foot');
+  if (attFoot) attFoot.className = '';
+  var submitBtn = document.getElementById('submit-btn');
+  if (submitBtn) { submitBtn.disabled = false; submitBtn.style.background = ''; }
+  // Unlock all student rows and enable their buttons without changing statuses
+  Object.keys(attState).forEach(function(id) {
+    if (attState[id] && !attState[id].officeMarked) {
+      attState[id].locked = false;
+    }
+  });
+  // Re-enable buttons in DOM — update each row directly
+  document.querySelectorAll('.student-row').forEach(function(row) {
+    row.classList.remove('office-marked');
+    row.querySelectorAll('.sbtn').forEach(function(b){ b.disabled = false; });
+    var pencil = row.querySelector('.pencil-btn');
+    if (pencil) { pencil.disabled = false; pencil.style.opacity = ''; pencil.style.cursor = ''; }
+    // Remove "Already taken" badges
+    row.querySelectorAll('.office-badge').forEach(function(b){
+      if (b.textContent === 'Already taken') b.remove();
+    });
+  });
+  // Re-enable note inputs
+  document.querySelectorAll('.note-input').forEach(function(inp){ inp.disabled = false; });
+  updateTally();
+  updateProgress();
+}
+
 // ── ATTENDANCE ────────────────────────────────────────────────
 function openAttendance(cls) {
   currentClass = cls;
@@ -387,14 +424,20 @@ function openAttendance(cls) {
   pills += '<button class="not-your-class" onclick="loadFallback()">Not your class?</button>';
   document.getElementById('att-pills').innerHTML = pills;
   document.getElementById('att-error').classList.remove('show');
-  // Show modal and disable submit if attendance was already taken via Veracross
-  if (cls.classAlreadyTaken) {
+  // Show modal and lock everything if attendance was already taken via Veracross
+  var locked = !!cls.classAlreadyTaken;
+  if (locked) {
     document.getElementById('already-taken-modal').classList.remove('hidden');
-    document.getElementById('submit-btn').disabled = true;
-    document.getElementById('submit-btn').style.background = '#b0c4de';
   } else {
     document.getElementById('already-taken-modal').classList.add('hidden');
   }
+  var submitBtn = document.getElementById('submit-btn');
+  var attFoot   = document.getElementById('att-foot');
+  submitBtn.disabled = locked;
+  submitBtn.style.background = locked ? '#b0c4de' : '';
+  if (attFoot) attFoot.className = locked ? 'locked' : '';
+  // Store locked state so renderStudents can disable all buttons
+  currentClass.locked = locked;
   renderStudents(cls.students || []);
   updateTally();
   go('s-attendance');
@@ -421,28 +464,43 @@ function renderStudents(students) {
       '<div style="padding:32px;text-align:center;color:#aaa">No students</div>';
     updateProgress(); return;
   }
+  var classLocked = !!(currentClass && currentClass.locked);
   var html = '';
   students.forEach(function(s) {
-    var locked  = !!s.officeMarked;
-    var initSt  = locked
-      ? (s.existingStatus === 8 ? 'tardy' : s.existingStatus === 29 ? 'absent' : 'present')
-      : 'present';
+    var locked = !!s.officeMarked || classLocked;
+
+    // Always use existing Veracross status to pre-fill — for ALL students
+    var initSt;
+    if (s.existingStatus === 8 || s.existingStatus === 9 || s.existingStatus === 87 ||
+        s.existingStatus === 95 || s.existingStatus === 96 || s.existingStatus === 97 ||
+        s.existingStatus === 98 || s.existingStatus === 100 || s.existingStatus === 101 ||
+        s.existingStatus === 109 || s.existingStatus === 112 || s.existingStatus === 113) {
+      initSt = 'tardy';
+    } else if (s.existingStatus !== null && s.existingStatus !== undefined &&
+               s.existingStatus !== 0 && s.existingStatus !== 70) {
+      initSt = 'absent';
+    } else {
+      initSt = 'present'; // 0, 70, or null = present
+    }
+
     attState[s.id] = { status: initSt, note: s.existingNote || '', locked: locked };
 
     var rc = 'student-row' + (locked ? ' office-marked' : '');
-    var badge = locked
+    var badge = s.officeMarked
       ? ' <span class="office-badge">Office: ' + statusLabel(s.existingStatus) + '</span>'
-      : '';
+      : classLocked
+        ? ' <span class="office-badge" style="background:#E6F1FB;color:#0C447C">Already taken</span>'
+        : '';
     var dis = locked ? ' disabled' : '';
     var note = (s.existingNote || '').replace(/"/g, '&quot;');
     var noteOpen = (!locked && s.existingNote) ? ' open' : '';
     var pencilCls = s.existingNote ? ' has-note' : '';
     var pencilDis = locked ? ' disabled style="opacity:.35;cursor:default"' : '';
 
-    // For locked students, highlight the actual office status
-    var pOn = !locked && initSt==='present' ? ' on' : '';
-    var tOn = initSt==='tardy'  ? ' on' : '';
-    var aOn = initSt==='absent' ? ' on' : '';
+    // Always highlight the actual current status
+    var pOn = initSt==='present' ? ' on' : '';
+    var tOn = initSt==='tardy'   ? ' on' : '';
+    var aOn = initSt==='absent'  ? ' on' : '';
 
     html +=
       '<div class="' + rc + '" id="row-' + s.id + '">' +
@@ -493,7 +551,6 @@ function setStatus(id, status) {
 function updateTally() {
   var p=0,t=0,a=0;
   Object.values(attState).forEach(function(s){
-    if (s.locked) return; // don't count office-marked students
     var st = s.status || s;
     if(st==='present')p++; else if(st==='tardy')t++; else if(st==='absent')a++;
   });
@@ -503,6 +560,14 @@ function updateTally() {
 }
 
 function updateProgress() {
+  var classLocked = !!(currentClass && currentClass.locked);
+  if (classLocked) {
+    // Show all students as marked when class is already taken
+    var total = Object.keys(attState).length;
+    document.getElementById('prog-lbl').textContent = total + '/' + total;
+    document.getElementById('submit-btn').disabled = true;
+    return;
+  }
   // Only count students the teacher needs to mark (not office-marked)
   var unlocked = Object.values(attState).filter(function(s){ return !s.locked; });
   var total    = unlocked.length;
@@ -513,6 +578,7 @@ function updateProgress() {
 
 function submitAttendance() {
   if (!currentClass) return;
+  if (currentClass.locked) return; // class already taken — should not submit
   var btn = document.getElementById('submit-btn');
   btn.disabled = true; btn.textContent = 'Submitting…';
   var today = new Date();
