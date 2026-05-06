@@ -192,12 +192,7 @@ function refreshAll() {
   var btn = document.getElementById('refresh-btn');
   btn.disabled = true;
   btn.innerHTML = 'Loading...';
-  gasGet('getAdminDashboardUrl')
-    .then(function(res) {
-      if (!res.url) throw new Error(res.error || 'No URL returned');
-      return fetch('https://corsproxy.io/?' + encodeURIComponent(res.url));
-    })
-    .then(function(r) { return r.json(); })
+  gasGet('getAdminDashboardData')
     .then(function(data) {
       btn.disabled = false;
       btn.innerHTML = 'Refresh';
