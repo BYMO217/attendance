@@ -513,7 +513,7 @@ function renderLogView(d) {
       '<td>' + (e.roomName || '--') + '</td>' +
       '<td><span class="badge badge-blue">' + (e.period || '--') + '</span></td>' +
       '<td>' + sourceBadge + '</td>' +
-      '<td>' + (isVc ? '--' : (e.submitted || 0)) + '</td>' +
+      '<td>' + (e.submitted || 0) + '</td>' +
       '<td style="color:' + (e.errorCount > 0 ? '#E24B4A' : '#aaa') + '">' + (e.errorCount || 0) + '</td>' +
     '</tr>';
   });
