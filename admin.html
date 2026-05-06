@@ -275,22 +275,23 @@ function render(d) {
     now.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'});
 
   var total = d.allClasses ? d.allClasses.length : 0;
-  var sub   = d.submittedCount || 0;
-  var pct   = total > 0 ? Math.round(sub/total*100) : 0;
-  var pend  = d.pendingCount  || 0;
-  var vc    = d.veracrossCount || 0;
-  var queue = d.queuedCount   || 0;
-  var errs  = (d.recentErrors||[]).length;
+  var sub   = d.submittedCount  || 0;
+  var vc    = d.veracrossCount  || 0;
+  var done  = sub + vc; // total taken via either app or Veracross
+  var pct   = total > 0 ? Math.round(done/total*100) : 0;
+  var pend  = d.pendingCount   || 0;
+  var queue = d.queuedCount    || 0;
+  var errs  = (d.recentErrors  || []).length;
 
   document.getElementById('main').innerHTML =
     '<div class="stat-grid">' +
-      scard(sub+' / '+total, 'Submitted',  pct===100?'green':pct>50?'amber':'red',
+      scard(done+' / '+total, 'Taken',       pct===100?'green':pct>50?'amber':'red',
         '<div class="prog-bar"><div class="prog-fill" style="width:'+pct+'%;background:'+(pct===100?'#1D9E75':pct>50?'#BA7517':'#E24B4A')+'"></div></div>') +
-      scard(pct+'%',  'Completion', pct===100?'green':pct>50?'amber':'red', "Today's attendance") +
-      scard(pend,  'Pending',    pend>0?'amber':'green',   pend>0?'Classes not yet submitted':'All up to date') +
-      scard(vc,    'In Veracross', vc>0?'blue':'gray',     vc>0?'Taken via Veracross dashboard':'None detected') +
-      scard(queue, 'Queued',     queue>0?'red':'green',    queue>0?'Will retry automatically':'No failures') +
-      scard(errs,     'API errors', errs>0?'red':'green',    'Recent period') +
+      scard(pct+'%',  'Completion',   pct===100?'green':pct>50?'amber':'red', "Today's attendance") +
+      scard(sub,      'Via App',      sub>0?'green':'gray',   sub>0?'Submitted via BYMO app':'None yet') +
+      scard(vc,       'In Veracross', vc>0?'blue':'gray',     vc>0?'Taken via Veracross':'None detected') +
+      scard(pend,     'Pending',      pend>0?'amber':'green', pend>0?'Not yet submitted':'All done!') +
+      scard(queue,    'Queued',       queue>0?'red':'green',  queue>0?'Will retry automatically':'No failures') +
     '</div>' +
     '<div class="panel">' +
       '<div class="cache-bar">' +
@@ -494,19 +495,26 @@ function filterTable(q) {
 function renderLogView(d) {
   var log = d.recentLog || [];
   var html = '<div class="panel-header" style="border-top:none">' +
-    '<span class="panel-title">Submission log</span>' +
+    '<span class="panel-title">Submission log (' + log.length + ')</span>' +
     '<button class="btn btn-red" onclick="clearLog()">Clear log</button></div>';
-  if (!log.length) return html+'<div class="empty">No submissions yet today</div>';
-  html += '<div class="tbl-wrap"><table><thead><tr><th>Time</th><th>Class</th><th>Teacher</th><th>Room</th><th>Period</th><th>Students</th><th>Errors</th></tr></thead><tbody>';
+  if (!log.length) return html + '<div class="empty">No submissions yet today</div>';
+  html += '<div class="tbl-wrap"><table><thead><tr>' +
+    '<th>Time</th><th>Class</th><th>Teacher</th><th>Room</th><th>Period</th><th>Source</th><th>Students</th><th>Errors</th>' +
+    '</tr></thead><tbody>';
   log.forEach(function(e) {
+    var isVc = e.source === 'veracross';
+    var sourceBadge = isVc
+      ? '<span class="badge badge-blue">Veracross</span>'
+      : '<span class="badge badge-green">App</span>';
     html += '<tr>' +
-      '<td style="color:#888;white-space:nowrap">'+fmtTs(e.timestamp)+'</td>' +
-      '<td style="font-weight:500">'+(e.className||'--')+'</td>' +
-      '<td style="color:#555">'+(e.teacherName||'--')+'</td>' +
-      '<td>'+(e.roomName||'--')+'</td>' +
-      '<td><span class="badge badge-blue">'+(e.period||'--')+'</span></td>' +
-      '<td>'+(e.submitted||0)+'</td>' +
-      '<td style="color:'+(e.errorCount>0?'#E24B4A':'#aaa')+'">'+(e.errorCount||0)+'</td>' +
+      '<td style="color:#888;white-space:nowrap">' + fmtTs(e.timestamp) + '</td>' +
+      '<td style="font-weight:500">' + (e.className || '--') + '</td>' +
+      '<td style="color:#555">' + (e.teacherName || '--') + '</td>' +
+      '<td>' + (e.roomName || '--') + '</td>' +
+      '<td><span class="badge badge-blue">' + (e.period || '--') + '</span></td>' +
+      '<td>' + sourceBadge + '</td>' +
+      '<td>' + (isVc ? '--' : (e.submitted || 0)) + '</td>' +
+      '<td style="color:' + (e.errorCount > 0 ? '#E24B4A' : '#aaa') + '">' + (e.errorCount || 0) + '</td>' +
     '</tr>';
   });
   html += '</tbody></table></div>';
@@ -552,8 +560,9 @@ function clearLog()    { if(!confirm('Clear submission log?'))return; gasGet('ad
 function clearErrors() { gasGet('adminClearErrors').then(function(){refreshAll();}); }
 
 var _lastSubmittedCount = -1;
-var _lastLogCount = -1;
-var _polling = false;
+var _lastLogCount       = -1;
+var _lastPendingCount   = -1;
+var _polling            = false;
 
 function pollForUpdates() {
   if (_polling) return;
@@ -562,23 +571,20 @@ function pollForUpdates() {
     .then(function(data) {
       _polling = false;
       if (!data.success) return;
-      var newSub = data.submittedCount || 0;
-      var newLog = (data.recentLog || []).length;
-      var newVc  = data.veracrossCount || 0;
-      // Only re-render if something actually changed
-      if (newSub !== _lastSubmittedCount || newLog !== _lastLogCount || newVc !== _lastVcCount) {
+      var newSub  = (data.submittedCount || 0) + (data.veracrossCount || 0);
+      var newLog  = (data.recentLog || []).length;
+      var newPend = data.pendingCount || 0;
+      if (newSub !== _lastSubmittedCount || newLog !== _lastLogCount || newPend !== _lastPendingCount) {
         _lastSubmittedCount = newSub;
         _lastLogCount       = newLog;
-        _lastVcCount        = newVc;
+        _lastPendingCount   = newPend;
         dashData = data;
         render(data);
-        document.getElementById('last-sync').textContent = 'Live \u2022 ' + fmt(new Date());
+        document.getElementById('last-sync').innerHTML = '<span class="live-dot"></span>Updated ' + fmt(new Date());
       }
     })
     .catch(function() { _polling = false; });
 }
-
-var _lastVcCount = -1;
 
 refreshAll();
 // Poll every 20 seconds for live updates
