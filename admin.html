@@ -401,7 +401,7 @@ function renderBlockView(d) {
   var html = '<div class="block-grid">';
   blocks.forEach(function(bk) {
     var bd = blockMap[bk];
-    var subCnt  = bd.classes.filter(function(c){return c.submitted;}).length;
+    var subCnt  = bd.classes.filter(function(c){return c.submitted || c.takenInVeracross;}).length;
     var allSub  = subCnt === bd.classes.length;
     var noneSub = subCnt === 0;
     html += '<div class="block-row">' +
@@ -422,7 +422,7 @@ function renderBlockView(d) {
     });
     html += '</div></div>';
   });
-  var sub = classes.filter(function(c){return c.submitted;}).length;
+  var sub = classes.filter(function(c){return c.submitted || c.takenInVeracross;}).length;
   html += '</div><div style="padding:12px 16px;border-top:1px solid #f0f0f0;font-size:12px;color:#888;display:flex;gap:16px">' +
     '<span>Submitted: '+sub+'</span><span>Pending: '+(classes.length-sub)+'</span><span>Total: '+classes.length+'</span></div>';
   return html;
