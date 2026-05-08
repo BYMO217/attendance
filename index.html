@@ -643,7 +643,10 @@ function submitAttendance() {
     date:        dateStr,
     records: Object.keys(attState)
       .filter(function(id){ return !attState[id].locked; })
-      .map(function(id){ return { studentId:id, status:attState[id].status, note:attState[id].note||'' }; }),
+      .map(function(id){
+        var student = (currentClass.students||[]).find(function(s){ return s.id === id; }) || {};
+        return { studentId:id, studentName: student.name || '', status:attState[id].status, note:attState[id].note||'' };
+      }),
   };
   gasPost('submitAttendance', payload)
     .then(function(r) {
