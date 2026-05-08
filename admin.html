@@ -506,6 +506,22 @@ function renderLogView(d) {
     var sourceBadge = isVc
       ? '<span class="badge badge-blue">Veracross</span>'
       : '<span class="badge badge-green">App</span>';
+
+    // Build hover tooltip showing student statuses
+    var tooltip = '';
+    var recs = e.studentRecords || [];
+    if (recs.length) {
+      var lines = recs.map(function(r) {
+        var s = r.status === 'present' ? '✓' : r.status === 'tardy' ? 'T' : r.status === 'absent' ? 'A' : r.status;
+        return s + ' ' + (r.name || r.studentName || '');
+      });
+      tooltip = lines.join('\n');
+    }
+
+    var countCell = recs.length
+      ? '<td title="' + tooltip + '" style="cursor:help">' + (e.submitted||recs.length) + ' ⓘ</td>'
+      : '<td>' + (e.submitted || 0) + '</td>';
+
     html += '<tr>' +
       '<td style="color:#888;white-space:nowrap">' + fmtTs(e.timestamp) + '</td>' +
       '<td style="font-weight:500">' + (e.className || '--') + '</td>' +
@@ -513,7 +529,7 @@ function renderLogView(d) {
       '<td>' + (e.roomName || '--') + '</td>' +
       '<td><span class="badge badge-blue">' + (e.period || '--') + '</span></td>' +
       '<td>' + sourceBadge + '</td>' +
-      '<td>' + (e.submitted || 0) + '</td>' +
+      countCell +
       '<td style="color:' + (e.errorCount > 0 ? '#E24B4A' : '#aaa') + '">' + (e.errorCount || 0) + '</td>' +
     '</tr>';
   });
