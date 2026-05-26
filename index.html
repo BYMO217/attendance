@@ -323,6 +323,16 @@ window.addEventListener('load', function() {
   var m = window.location.search.match(/[?&]room=([^&]+)/);
   if (m) loadRoom(decodeURIComponent(m[1]));
   else go('s-home');
+
+  // Pre-load schedule data in background so room names and tabs are ready
+  gasGet('getAllScheduleData').then(function(data) {
+    if (data && !data.error) {
+      scheduleData = data;
+      // Re-render tabs if already visible
+      var fb = document.getElementById('s-fallback');
+      if (fb && fb.classList.contains('active')) renderFallbackList();
+    }
+  }).catch(function() {}); // silent fail — data loads on demand if needed
 });
 
 // ── CAMERA ───────────────────────────────────────────────────
@@ -405,25 +415,36 @@ function parseQR(data) {
   loadRoom(m ? decodeURIComponent(m[1]) : data.trim());
 }
 
-// ── ROOM LOOKUP ───────────────────────────────────────────────
 function loadRoom(roomId) {
   if (!roomId) { showToast('Invalid QR'); return; }
   go('s-detecting');
-  // Look up real room name from cached schedule if available
-  var roomName = 'Room ' + roomId;
-  if (scheduleData && scheduleData.roomSchedule) {
-    var classes = scheduleData.roomSchedule[roomId];
+
+  // Look up real room name — check all available sources
+  var roomName = null;
+
+  // 1. Check roomMap (fastest — direct id→name lookup)
+  if (scheduleData && scheduleData.roomMap && scheduleData.roomMap[String(roomId)]) {
+    roomName = scheduleData.roomMap[String(roomId)];
+  }
+
+  // 2. Check roomSchedule entries
+  if (!roomName && scheduleData && scheduleData.roomSchedule) {
+    var classes = scheduleData.roomSchedule[String(roomId)];
     if (classes && classes.length && classes[0].roomName) {
       roomName = classes[0].roomName;
     }
   }
+
+  // 3. Fallback
+  if (!roomName) roomName = 'Room ' + roomId;
+
   document.getElementById('det-room').textContent = roomName;
-  document.getElementById('det-sub').textContent  = 'Looking up current period…';
+  document.getElementById('det-sub').textContent  = 'Looking up current period\u2026';
   gasGet('getClassForRoom', { roomId: roomId })
     .then(function(r) {
       if (r.error)          { showToast(r.error); go('s-home'); return; }
       if (r.noCurrentClass) { showToast(r.reason || 'No class right now'); loadFallback(); return; }
-      // Update room name display with confirmed name from server
+      // Update with confirmed room name from server
       if (r.roomName) document.getElementById('det-room').textContent = r.roomName;
       openAttendance(r);
     })
