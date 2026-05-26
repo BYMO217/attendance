@@ -271,7 +271,7 @@
       <div class="modal-title">Attendance Already Taken</div>
       <div class="modal-body">Attendance was already submitted for this class in Veracross. Existing statuses are shown below.</div>
       <button class="modal-ok" onclick="dismissAlreadyTaken()">OK</button>
-      <button class="modal-override" onclick="overrideAttendance()">Resubmit</button>
+      <button class="modal-override" onclick="overrideAttendance()">Edit Attendance</button>
     </div>
   </div>
 
@@ -409,12 +409,22 @@ function parseQR(data) {
 function loadRoom(roomId) {
   if (!roomId) { showToast('Invalid QR'); return; }
   go('s-detecting');
-  document.getElementById('det-room').textContent = 'Room ' + roomId;
+  // Look up real room name from cached schedule if available
+  var roomName = 'Room ' + roomId;
+  if (scheduleData && scheduleData.roomSchedule) {
+    var classes = scheduleData.roomSchedule[roomId];
+    if (classes && classes.length && classes[0].roomName) {
+      roomName = classes[0].roomName;
+    }
+  }
+  document.getElementById('det-room').textContent = roomName;
   document.getElementById('det-sub').textContent  = 'Looking up current period…';
   gasGet('getClassForRoom', { roomId: roomId })
     .then(function(r) {
       if (r.error)          { showToast(r.error); go('s-home'); return; }
       if (r.noCurrentClass) { showToast(r.reason || 'No class right now'); loadFallback(); return; }
+      // Update room name display with confirmed name from server
+      if (r.roomName) document.getElementById('det-room').textContent = r.roomName;
       openAttendance(r);
     })
     .catch(function(e) { showToast('Error: ' + e.message); go('s-home'); });
