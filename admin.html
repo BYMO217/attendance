@@ -310,7 +310,7 @@ function render(d) {
         '<button class="tab '+(activeTab==='classes'?'active':'')+'" onclick="switchTab(\'classes\')">By Block / Period</button>' +
         '<button class="tab '+(activeTab==='table'  ?'active':'')+'" onclick="switchTab(\'table\')">Table view</button>' +
         '<button class="tab '+(activeTab==='log'    ?'active':'')+'" onclick="switchTab(\'log\')">Log</button>' +
-        '<button class="tab '+(activeTab==='errors' ?'active':'')+'" onclick="switchTab(\'errors\')">Errors</button>' +
+        '<button class="tab '+(activeTab==='errors' ?'active':'')+'" onclick="switchTab(\'errors\')"  style="'+(errs>0?'color:#E24B4A':'')+'">Errors'+(errs>0?' ('+errs+')':'')+'</button>' +
       '</div>' +
       '<div id="tab-content">' + renderTab(d) + '</div>' +
     '</div>';
@@ -540,16 +540,19 @@ function renderLogView(d) {
 function renderErrorView(d) {
   var errors = d.recentErrors || [];
   var html = '<div class="panel-header" style="border-top:none">' +
-    '<span class="panel-title">API errors</span>' +
+    '<span class="panel-title">API errors (' + errors.length + ')</span>' +
     '<button class="btn btn-red" onclick="clearErrors()">Clear</button></div>';
-  if (!errors.length) return html+'<div class="empty">No recent errors</div>';
-  html += '<div class="tbl-wrap"><table><thead><tr><th>Time</th><th>Context</th><th>Code</th><th>Message</th></tr></thead><tbody>';
+  if (!errors.length) return html + '<div class="empty">No recent errors</div>';
+  html += '<div class="tbl-wrap"><table><thead><tr>' +
+    '<th>Time</th><th>Context</th><th>Code</th><th>Message</th>' +
+    '</tr></thead><tbody>';
   errors.forEach(function(e) {
+    var codeColor = e.code >= 500 ? '#E24B4A' : e.code >= 400 ? '#BA7517' : '#888';
     html += '<tr>' +
-      '<td style="color:#888">'+fmtTs(e.timestamp)+'</td>' +
-      '<td>'+(e.context||'--')+'</td>' +
-      '<td><span class="badge badge-red">'+(e.code||'--')+'</span></td>' +
-      '<td style="color:#555;font-size:12px">'+(e.message||'--')+'</td>' +
+      '<td style="color:#888;white-space:nowrap">' + fmtTs(e.timestamp) + '</td>' +
+      '<td style="font-weight:500;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + (e.context||'') + '">' + (e.context||'--') + '</td>' +
+      '<td><span class="badge" style="background:#FCEBEB;color:' + codeColor + '">' + (e.code||'--') + '</span></td>' +
+      '<td style="color:#555;font-size:12px;max-width:300px;word-break:break-word">' + (e.message||'--') + '</td>' +
     '</tr>';
   });
   html += '</tbody></table></div>';
