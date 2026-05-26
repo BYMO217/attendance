@@ -328,11 +328,11 @@ window.addEventListener('load', function() {
   gasGet('getAllScheduleData').then(function(data) {
     if (data && !data.error) {
       scheduleData = data;
-      // Re-render tabs if already visible
+      // Re-render fallback if already visible
       var fb = document.getElementById('s-fallback');
       if (fb && fb.classList.contains('active')) renderFallbackList();
     }
-  }).catch(function() {}); // silent fail — data loads on demand if needed
+  }).catch(function() {}); // silent — loads on demand if needed
 });
 
 // ── CAMERA ───────────────────────────────────────────────────
@@ -697,11 +697,35 @@ function submitAttendance() {
 
 // ── FALLBACK PICKER ───────────────────────────────────────────
 function loadFallback() {
-  if (scheduleData) { go('s-fallback'); renderFallbackList(); return; }
-  go('s-detecting');
-  document.getElementById('det-sub').textContent = 'Loading schedule…';
+  go('s-fallback');
+  if (scheduleData) {
+    renderFallbackList();
+    return;
+  }
+  // Show loading while fetching
+  document.getElementById('fb-list').innerHTML =
+    '<div style="text-align:center;padding:40px;color:#888">Loading schedule\u2026</div>';
   gasGet('getAllScheduleData')
-    .then(function(data) { scheduleData = data; go('s-fallback'); renderFallbackList(); })
+    .then(function(data) {
+      if (data && data.error) {
+        document.getElementById('fb-list').innerHTML =
+          '<div style="text-align:center;padding:40px;color:#E24B4A">' +
+          'Error: ' + data.error + '<br><br>' +
+          '<button onclick="scheduleData=null;loadFallback()" style="padding:10px 20px;background:#185FA5;color:#fff;border:none;border-radius:8px;font-size:14px;cursor:pointer">Retry</button>' +
+          '</div>';
+        return;
+      }
+      if (!data || (!Object.keys(data.roomSchedule||{}).length && !Object.keys(data.teacherSchedule||{}).length)) {
+        document.getElementById('fb-list').innerHTML =
+          '<div style="text-align:center;padding:40px;color:#888">' +
+          'No schedule data found.<br>Run setupAll() in Apps Script first.<br><br>' +
+          '<button onclick="scheduleData=null;loadFallback()" style="padding:10px 20px;background:#185FA5;color:#fff;border:none;border-radius:8px;font-size:14px;cursor:pointer">Retry</button>' +
+          '</div>';
+        return;
+      }
+      scheduleData = data;
+      renderFallbackList();
+    })
     .catch(function(e) { showToast('Could not load: ' + e.message); go('s-home'); });
 }
 
